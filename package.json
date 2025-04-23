@@ -1,0 +1,8 @@
+{
+  "name": "portfolio",
+  "version": "1.0.0",
+  "description": "Adam's personal page",
+  "main": "index.html",
+  "author": "Adam Tetz",
+  "license": "MIT"
+}
