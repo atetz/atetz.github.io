@@ -10,5 +10,6 @@
   },
   "scripts": {
     "build-ghpages": "npx @11ty/eleventy --pathprefix=/atetz.github.io/"
-  }
+  },
+  "type": "module"
 }
