@@ -4,5 +4,8 @@
   "description": "Adam's personal page",
   "main": "index.html",
   "author": "Adam Tetz",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0"
+  }
 }
