@@ -1,5 +1,8 @@
 ---
 title: How did i make this page?
+
+eleventyNavigation:
+  key: Mammals
 ---
 
 # How did I make this page?
@@ -12,6 +15,6 @@ When I was a teen my "hobby" used to be designing websites. Designing a template
 Nowadays we have HTML5 and CSS3. I heard great stories about grid and flexbox. Which meant the days of fighting divs is long gone.. 
 
 So I decided I'd roll my own. With the help of some usefull libraries:
-- PicoCSS for a nice out of the box CSS that gives me a nice set of defaults to work with
-- Eleventy as a simpler static site generator so that I can generate content based on md files.
+- PicoCSS for a out of the box CSS that gives me a nice set of defaults to work with
+- Eleventy as a simple static site generator so that I can generate content based on md files.
 

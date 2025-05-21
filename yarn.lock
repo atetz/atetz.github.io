@@ -37,6 +37,13 @@
     urlpattern-polyfill "^10.0.0"
     ws "^8.18.1"
 
+"@11ty/eleventy-navigation@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@11ty/eleventy-navigation/-/eleventy-navigation-1.0.4.tgz#d532f7d6d8c66973b83b5695f908f4e1c04a9f04"
+  integrity sha512-FgIfKiFP1e3plQdIvSRph1tFV44bbCXcYs+AWcwnsfrn5I6Gf0t3hBq9IrR4JdnZ06hlEKq8qRbnbb0nfEZg3A==
+  dependencies:
+    dependency-graph "^1.0.0"
+
 "@11ty/eleventy-plugin-bundle@^3.0.0":
   version "3.0.5"
   resolved "https://registry.yarnpkg.com/@11ty/eleventy-plugin-bundle/-/eleventy-plugin-bundle-3.0.5.tgz#ccad20f32de94119918a951c3cf8c5f6a06bfd48"
