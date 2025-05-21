@@ -12,7 +12,7 @@ I spun up a repo and tried it out with a simple theme. Soon I noticed that once 
 
 But there was also a feeling lingering. I wanted something more minimalistic....
 When I was a teen my "hobby" used to be designing websites. Designing a template in a graphic program, slicing it up in 1px images and using HTML + CSS2. 
-Nowadays we have HTML5 and CSS3. I heard great stories about grid and flexbox. Which meant the days of fighting divs is long gone.. 
+Nowadays we have HTML5 and CSS3. I heard great stories about grid and flexbox. Which meant the days of fighting `<div>` are long gone.. 
 
 So I decided I'd roll my own. With the help of some usefull libraries:
 - PicoCSS for a out of the box CSS that gives me a nice set of defaults to work with
