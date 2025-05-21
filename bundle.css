@@ -32,6 +32,10 @@ footer {
     padding: var(--pico-block-spacing-vertical);
 }
 
+h1 {
+    padding-top: 0 !important;
+}
+
 #logo {
     max-height: 35px;
 }
