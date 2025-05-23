@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*sitemap.njk": "sitemap"
+    },
+    // this file breaks if it's formatted
+    "[sitemap]": {
+        "editor.formatOnSave": false
+    }
+}

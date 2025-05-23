@@ -23,11 +23,12 @@
   <body>
     <header>
       <div class="container flex-header">
-        <img
-          src="/assets/images/logo.svg"
-          alt="data-integration.dev Logo"
-          id="logo"
-        />
+        <a href="/" target="_self">
+          <img
+            src="/assets/images/logo.svg"
+            alt="data-integration.dev Logo"
+            id="logo"
+        /></a>
         <nav>
           {{
             collections.all
@@ -41,7 +42,7 @@
 
     <main>{{ content | safe }}</main>
 
-    <footer>
+    <footer id="siteFooter">
       <div class="container"><small>© Adam Tetz 2025</small></div>
     </footer>
   </body>

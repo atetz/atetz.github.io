@@ -1,5 +1,5 @@
 ---
-layout: home.njk
+layout: sidebar.njk
 eleventyNavigation:
   key: Home
 ---

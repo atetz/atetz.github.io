@@ -1,0 +1,87 @@
+---
+title: Blog
+layout: base.njk
+eleventyNavigation:
+  key: Blog
+pagination:
+  data: collections.post
+  size: 6
+  alias: blogPosts
+  generatePageOnEmptyData: true
+  reverse: true
+---
+
+<div class="container">
+  {%- for post in blogPosts -%}
+  <article>
+    <hgroup>
+      <h2>
+        <a href="{{ post.url }}" class="blogPostLinks">{{ post.data.title }}</a>
+      </h2>
+      <p>{{ post.date | postDate }}</p>
+    </hgroup>
+  </article>
+  {%- endfor -%}
+
+  <div id="pagination">
+    {% set isFirstPage = (page.url == pagination.href.first) %}
+    <button
+      onclick="window.location.href='{{ pagination.href.first }}'"
+      {%
+      if
+      isFirstPage
+      %}disabled{%
+      endif
+      %}
+    >
+      First
+    </button>
+
+    {% set previousPage = pagination.href.previous %}
+
+    <button
+      onclick="window.location.href='{{ previousPage }}'"
+      {%
+      if
+      not
+      previousPage
+      %}
+      disabled
+      {%
+      endif
+      %}
+    >
+      Previous
+    </button>
+
+    {% set nextPage = pagination.href.next %}
+
+    <button
+      onclick="window.location.href='{{ nextPage }}'"
+      {%
+      if
+      not
+      nextPage
+      %}
+      disabled
+      {%
+      endif
+      %}
+    >
+      Next
+    </button>
+
+    {% set isLastPage = (page.url == pagination.href.last) %}
+    <button
+      onclick="window.location.href='{{ pagination.href.last }}'"
+      {%
+      if
+      isLastPage
+      %}disabled{%
+      endif
+      %}
+    >
+      Last
+    </button>
+  </div>
+</div>

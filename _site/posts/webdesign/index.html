@@ -23,22 +23,51 @@
   <body>
     <header>
       <div class="container flex-header">
-        <img
-          src="/assets/images/logo.svg"
-          alt="data-integration.dev Logo"
-          id="logo"
-        />
+        <a href="/" target="_self">
+          <img
+            src="/assets/images/logo.svg"
+            alt="data-integration.dev Logo"
+            id="logo"
+        /></a>
         <nav>
           <ul><li><a href="/">Home</a></li>
-<li><a href="/posts/">Posts</a></li></ul>
+<li><a href="/blog/">Blog</a></li></ul>
         </nav>
       </div>
     </header>
 
     <main>
-<div class="container">
-  <section>
-    <p>My goal was to make a simple page that would enable me to write something about myself and my services. And it should also be a spot where I could share my ideas. I heard about Github pages before and I wanted to give it a go. Naturally I found loads of resources naming jekyll.</p>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <img
+        src="/assets/images/profilepic.png"
+        alt="profile picture"
+        class="roundedPhoto"
+      />
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small>Freelance Data professional<i>, lover of outdoors.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small
+          ><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank"
+            >in/adam-tetz</a
+          >
+        </small>
+        <br />
+        <i class="fa-brands fa-github"></i>
+        <small
+          ><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section><p>My goal was to make a simple page that would enable me to write something about myself and my services. And it should also be a spot where I could share my ideas. I heard about Github pages before and I wanted to give it a go. Naturally I found loads of resources naming jekyll.</p>
 <p>I spun up a repo and tried it out with a simple theme. Soon I noticed that once I wanted to make some changes to the theme, it required some effort to understand and override what the prevous designer intended. Could I just pick something and call it a day? Maybe.</p>
 <p>But there was also a feeling lingering. I wanted something more minimalistic....
 When I was a teen my &quot;hobby&quot; used to be designing websites. Designing a template in a graphic program, slicing it up in 1px images and using HTML + CSS2.
@@ -48,12 +77,12 @@ Nowadays we have HTML5 and CSS3. I heard great stories about grid and flexbox. W
 <li>PicoCSS for a out of the box CSS that gives me a nice set of defaults to work with</li>
 <li>Eleventy as a simple static site generator so that I can generate content based on md files.</li>
 </ul>
-
-  </section>
+</section>
+  </div>
 </div>
 </main>
 
-    <footer>
+    <footer id="siteFooter">
       <div class="container"><small>© Adam Tetz 2025</small></div>
     </footer>
   </body>
