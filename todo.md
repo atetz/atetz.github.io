@@ -1,7 +1,7 @@
 # TO DO
 
 ## layout
-~? have a layout for posts and homepage?~
+~~? have a layout for posts and homepage?~~
 - research presentation of posts
 ## header
 - ~~Implement dynamic menu~~
@@ -11,7 +11,7 @@
 
 ## Content
 - Home
-  - Intro
+  - ~~Intro~~
 - Approach
   - What to expect?
   - Why work with me?

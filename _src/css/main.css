@@ -88,3 +88,12 @@ h1 {
 .blogPostLinks {
   color: unset;
 }
+
+#emailLink {
+  unicode-bidi: bidi-override;
+  direction: rtl;
+}
+
+#contactButton {
+  text-align: center;
+}

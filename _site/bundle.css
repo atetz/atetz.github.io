@@ -89,6 +89,16 @@ h1 {
   color: unset;
 }
 
+#emailLink {
+  unicode-bidi: bidi-override;
+  direction: rtl;
+}
+
+#contactButton {
+  text-align: center;
+  padding: var(--pico-block-spacing-vertical);
+}
+
 @charset "UTF-8";/*!
  * Pico CSS ✨ v2.1.1 (https://picocss.com)
  * Copyright 2019-2025 - Licensed under MIT
