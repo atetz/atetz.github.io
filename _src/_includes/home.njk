@@ -1,0 +1,37 @@
+---
+layout: base.njk
+---
+
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div class="sidebar-picture">
+      <img
+        src="/assets/images/profilepic.png"
+        alt="profile picture"
+        class="profile-pic"
+      />
+    </div>
+    <div class="sidebar-content">
+      <section>
+        <small>Freelance Data professional<i>, lover of outdoors.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small
+          ><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank"
+            >in/adam-tetz</a
+          >
+        </small>
+        <br />
+        <i class="fa-brands fa-github"></i>
+        <small
+          ><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>{{ content | safe }}</section>
+  </div>
+</div>

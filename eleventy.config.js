@@ -6,4 +6,5 @@ export default function (eleventyConfig) {
   // Copy `assets/` to `_site/assets`
   eleventyConfig.addPassthroughCopy("assets");
   eleventyConfig.addPlugin(eleventyNavigationPlugin);
+  eleventyConfig.setInputDirectory("_src");
 }

@@ -1,11 +1,7 @@
 ---
-title: How did i make this page?
-
-eleventyNavigation:
-  key: Mammals
+title: How did I make this page?
+date: Last Modified
 ---
-
-# How did I make this page?
 My goal was to make a simple page that would enable me to write something about myself and my services. And it should also be a spot where I could share my ideas. I heard about Github pages before and I wanted to give it a go. Naturally I found loads of resources naming jekyll. 
 
 I spun up a repo and tried it out with a simple theme. Soon I noticed that once I wanted to make some changes to the theme, it required some effort to understand and override what the prevous designer intended. Could I just pick something and call it a day? Maybe.
