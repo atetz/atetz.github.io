@@ -10,11 +10,11 @@
 
 
 ## Content
-- Home
+- ~~Home~~
   - ~~Intro~~
-- Approach
-  - What to expect?
-  - Why work with me?
+- ~~Approach~~
+~~  - What to expect?~~
+  ~~- Why work with me?~~
   - What not to expect?
 - Work
   - Add project examples
@@ -25,4 +25,4 @@
     - My role & tools used (e.g. “Designed a serverless ETL pipeline using AWS Lambda and Step Functions”)
     - Impact or outcome (e.g. “Reduced data latency by 80%”)
   - Blog
-- Contact
+~~- Contact~~
