@@ -2,6 +2,7 @@
 layout: sidebar.njk
 eleventyNavigation:
   key: Home
+  order: 1
 ---
 
 ## Hi, I'm Adam Tetz!
@@ -17,7 +18,7 @@ I achieve this in two key ways:
 ### Beyond data
 🌍 **Adapting to La Vie Française**
 
-Only just emigrated to France in october 2024, I'm adapting to my living my life in Burgundy and currently learning French (A2 and counting!)
+Only just emigrated to France in October 2024, I'm adapting to my living my life in Burgundy and currently learning French (A2 and counting!).
 
 ⛰️ **Outdoors**
 

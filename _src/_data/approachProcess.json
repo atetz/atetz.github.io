@@ -1,0 +1,33 @@
+{
+  "steps": [
+    {
+      "title": "Step 1: Intro meeting",
+      "content": "We'll begin with a intro meeting. This is an open conversation about your goals, the challenges you're facing and what you are looking for. We'll explore wether and how we can work together."
+    },
+    {
+      "title": "Step 2: Shared understanding",
+      "content": "If the next step isn't clear yet, we can dive deeper with a <b>Discovery Hackathon</b>* During this hands-on session we'll further explore your goals, challenges, systems & processes together. This also means sketching out solutions or testing assumptions to create a shared understanding. Whether or not we end up working together, you'll walk away with new insights. And I'll be able to make a realistic proposal.",
+      "footnote": "*Timeboxed between 2 - 4 hours"
+    },
+    {
+      "title": "Step 3: Proposal",
+      "content": "I'll create a proposal outlining the scope, deliverables, timeline, and budget. We'll go through it together to make sure we're on the same page."
+    },
+    {
+      "title": "Step 4: Agreement",
+      "content": "Once we agree on the proposal, we'll finalise the formal things with a simple agreement."
+    },
+    {
+      "title": "Step 5: Kickoff",
+      "content": "We schedule the start date, set up communication channels, and get started. You'll know exactly what to expect and when."
+    },
+    {
+      "title": "Step 6: Iteration & delivery",
+      "content": "I'll deliver work in close collaboration with you. You'll get regular updates where I'll ask for feedback."
+    },
+    {
+      "title": "Step 7:Wrapping up & Looking Ahead",
+      "content": "Once I've delivered what we have agreed upon, we'll do a retrospective. From there, we can discuss what next step best fits your needs. We either wrap things up, start a new phase, or move into a support/maintenance phase."
+    }
+  ]
+}

@@ -111,3 +111,9 @@ h1 {
 #contactButton {
   text-align: center;
 }
+
+.centerImage {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}

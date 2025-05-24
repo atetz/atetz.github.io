@@ -7,6 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "@11ty/eleventy": "^3.0.0",
+    "@11ty/eleventy-img": "^6.0.4",
     "@11ty/eleventy-navigation": "^1.0.4",
     "@quasibit/eleventy-plugin-sitemap": "^2.2.0"
   },
