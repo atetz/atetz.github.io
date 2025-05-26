@@ -7,11 +7,6 @@
         </url>
     
         <url>
-            <loc>/posts/webdesign/</loc>
-            <lastmod>2025-04-23T13:41:50.100Z</lastmod>
-        </url>
-    
-        <url>
             <loc>/posts/mra-beeline/</loc>
             <lastmod>2025-05-21T15:59:09.872Z</lastmod>
         </url>
@@ -29,6 +24,11 @@
         <url>
             <loc>/approach/</loc>
             <lastmod>2025-05-23T19:19:47.549Z</lastmod>
+        </url>
+    
+        <url>
+            <loc>/posts/webdesign/</loc>
+            <lastmod>2025-05-26T10:10:17.664Z</lastmod>
         </url>
     
 </urlset>
