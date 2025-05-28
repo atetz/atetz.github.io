@@ -122,6 +122,24 @@ h1 {
   margin-right: auto;
 }
 
+.floatLeft {
+  float: left;
+  margin-right: var(--pico-block-spacing-vertical);
+}
+
+.floatRight {
+  float: right;
+  margin-left: var(--pico-block-spacing-vertical);
+}
+
+#message {
+  padding: var(--pico-block-spacing-vertical);
+  text-align: center;
+}
+#download-container {
+  text-align: center;
+}
+
 @charset "UTF-8";/*!
  * Pico CSS ✨ v2.1.1 (https://picocss.com)
  * Copyright 2019-2025 - Licensed under MIT

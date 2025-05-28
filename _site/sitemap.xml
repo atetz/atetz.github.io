@@ -7,11 +7,6 @@
         </url>
     
         <url>
-            <loc>/posts/mra-beeline/</loc>
-            <lastmod>2025-05-21T15:59:09.872Z</lastmod>
-        </url>
-    
-        <url>
             <loc>/blog/</loc>
             <lastmod>2025-05-21T16:00:02.563Z</lastmod>
         </url>
@@ -28,7 +23,17 @@
     
         <url>
             <loc>/posts/webdesign/</loc>
-            <lastmod>2025-05-26T10:10:17.664Z</lastmod>
+            <lastmod>2025-05-26T10:15:39.722Z</lastmod>
+        </url>
+    
+        <url>
+            <loc>/utils/myrouteapp-to-beeline/</loc>
+            <lastmod>2025-05-28T12:49:23.310Z</lastmod>
+        </url>
+    
+        <url>
+            <loc>/posts/mra-beeline/</loc>
+            <lastmod>2025-05-28T12:50:50.711Z</lastmod>
         </url>
     
 </urlset>

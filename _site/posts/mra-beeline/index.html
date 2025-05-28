@@ -46,8 +46,117 @@
     </div>
   </aside>
   <div id="main">
-    <section><p>Content</p>
-</section>
+    <section>
+      
+<hgroup>
+    <h2>
+      How I used a MyRouteApp gpx with my Beeline moto II
+    </h2>
+    <p>May 28, 2025</p>
+</hgroup>
+  <details name="TLDR">
+  <summary>In a hurry? Click here for a TLDR</summary>
+  <p>Testing out my new Beeline Moto II motorbike navigation, I ran into some compatibility issues with my routes created with the MyRouteApp. Upon inspecting both files I noticed a difference in the gpx file structure. Since a gpx is defined in XML I created small tool using JavaScript and XSLT to convert the MyrouteApp file to a Beeline compatible file. You can find the tool <a href="/utils/myrouteapp-to-beeline" target="_self">here</a></p>
+</details>
+<h3>Intro</h3>
+<p><picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-bike.jpeg&width=300&format=webp&via=transform 300w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-bike.jpeg&width=300&format=jpeg&via=transform" alt="Triumph Bonneville T120" class="floatRight" width="300" height="225"></picture>One of my favourite ways to enjoy the French outdoors is by riding my motorbike.
+I make it a sport to create a twisty route with nice elevations and new viewpoints that preferably pass a couple of picnic spots along the way. My preferred method was creating a route in <a href="https://www.myrouteapp.com/en">MyRouteApp</a> and using my QuadLock mounted phone for navigation. And this worked quite well.</p>
+<p>But, I wanted a more minimalistic device in my cockpit and I liked the idea of having my phone in my pocket instead of on my bike in case of an emergency.
+So after some <em>&quot;very deep research&quot;</em> on YouTube and Google, I naturally found (or was influenced towards...) the Beeline Moto II.</p>
+<p>Fast forward to unboxing and using the Beeline. I was <strong>super hyped</strong>. I exported my gpx file from MyRouteApp and hit the road. And all went surprisingly well.</p>
+<h3>Problem</h3>
+<p><picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-device.jpeg&width=200&format=webp&via=transform 200w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-device.jpeg&width=200&format=jpeg&via=transform" alt="Beeline device without navigation" class="floatLeft" width="200" height="200"></picture>Until.... I hit into a familiar yellow French sign named déviation (a diversion)! As soon as I got off the track, my Beeline showed a white arrow further diving into a black abyss. No roads were visible, no directions, only a white arrow and a dotted line showing how far I was off the track.</p>
+<p><em>What on earth?</em> Why is my newest piece of navigation technology not navigating? So I stopped, grabbed my phone and opened the Beeline app. Skipping a waypoint wasn't an option because I only had 1 waypoint. Hmm... I opened my maps app and after memorizing some villages I got back on track and my turn by turn navigation was restored. Sweet!</p>
+<p>On my way home my inner problem solver was already working. <em>Did I export my file wrong? Did I forget to check a box on importing?</em></p>
+<p>Soon I learned that other users had similar issues combining MyRouteApp and Beeline, and that their forum topics hit a dead end. They noted that their route seemed to be converted to a track, and only had a start- and end-point. I also learned that it was impossible to import a Beeline gpx in the MyRouteApp. I tried a couple of things on the MyRouteApp end without success. Then on the Beeline support page I found an <a href="https://support.beeline.co/en/articles/10570038-importing-and-exporting-gpx-routes">article</a> on importing and exporting a gpx with this note:</p>
+<blockquote>Please note: you can only edit GPX-imported routes within the Beeline app if you are using the "Waypoints only" import mode. You can learn more about that mode in the article listed above.
+  <footer>
+    <cite>— Beeline support</cite>
+  </footer>
+</blockquote>
+<p><strong>Waypoints only import mode? I didn't see that option at all!</strong> But surely my gpx had waypoints? During the creation of my route I added 30 or so...</p>
+<p>You might be thinking: <em>Why aren't you using the Beeline app anyway?</em> While the Beeline app comes with a route creation functionality, I find the feature set of MyRouteApp superior. I want to skip dirt roads, maximize twisty roads, maximize elevation, toggle different points of interest along the way like petrol stations etc.</p>
+<p>Carrying on with my problem, I created a small test route in the Beeline app and exported a gpx file. Since the gpx file is actually a xml file, I shouldn't have any trouble figuring out what the differences are.</p>
+<p>This is a snippet of the Beeline gpx export without the xml declaration and namespaces:</p>
+<pre><code>.....
+&lt;!-- The route waypoints --&gt;
+  &lt;wpt lat=&quot;47.765573749816014&quot; lon=&quot;4.5727777081385605&quot;/&gt;
+  &lt;wpt lat=&quot;47.76747611439015&quot; lon=&quot;4.570651287011771&quot;/&gt;
+  &lt;wpt lat=&quot;47.84947693295322&quot; lon=&quot;4.568749244689883&quot;/&gt;
+  .....
+  &lt;!-- The route --&gt;
+  &lt;rte&gt;
+    &lt;rtept lat=&quot;47.76591&quot; lon=&quot;4.57288&quot;/&gt;
+    &lt;rtept lat=&quot;47.76595&quot; lon=&quot;4.5726&quot;/&gt;
+    &lt;rtept lat=&quot;47.76597&quot; lon=&quot;4.57253&quot;/&gt;
+    &lt;rtept lat=&quot;47.766&quot; lon=&quot;4.57248&quot;/&gt;
+    &lt;rtept lat=&quot;47.76614&quot; lon=&quot;4.57222&quot;/&gt;
+    .....
+</code></pre>
+<p>Alright, now let's have a look at the MyRouteApp gpx that I'm importing:</p>
+<pre><code>.....
+&lt;rte&gt;
+        &lt;name&gt;test&lt;/name&gt;
+        &lt;rtept lat=&quot;47.767945375567&quot; lon=&quot;4.5705699920654&quot;&gt;
+            &lt;name&gt;12 Route de la Jonction, 21400 Nod-sur-Seine, Frankrijk&lt;/name&gt;
+            &lt;extensions&gt;
+                &lt;trp:ViaPoint /&gt;
+            &lt;/extensions&gt;
+        &lt;/rtept&gt;
+        ......
+    &lt;/rte&gt;
+    &lt;trk&gt;
+        &lt;name&gt;Track-test&lt;/name&gt;
+        &lt;trkseg&gt;
+            &lt;trkpt lon=&quot;4.570600&quot; lat=&quot;47.767940&quot; /&gt;
+            &lt;trkpt lon=&quot;4.570710&quot; lat=&quot;47.768370&quot; /&gt;
+            &lt;trkpt lon=&quot;4.570720&quot; lat=&quot;47.768510&quot; /&gt;
+            &lt;trkpt lon=&quot;4.570710&quot; lat=&quot;47.768550&quot; /&gt;
+            &lt;trkpt lon=&quot;4.570710&quot; lat=&quot;47.768600&quot; /&gt;
+.....
+</code></pre>
+<p>A few things are going on here:</p>
+<ul>
+<li>The Beeline gpx has waypoint <code>&lt;wpt&gt;</code> nodes while the MyRouteApp has not.</li>
+<li>The MyRouteApp gpx provides more information in the route segment <code>&lt;rte&gt;</code>.</li>
+<li>The MyRouteApp gpx has a track segment <code>&lt;trk&gt;</code>.</li>
+<li>The Beeline gpx <code>&lt;rte&gt;</code> segment suspiciously looks a lot like the MyRouteApp <code>&lt;trkseg&gt;</code> because the coordinates are very close to each-other.</li>
+</ul>
+<p>Both seem to have a different interpretation of the <a href="http://www.topografix.com/GPX/1/1/#type_wptType">GPX 1.1 Schema Documentation</a>. Looking at the definitions I note 3 things:</p>
+<ul>
+<li><code>wptType</code> wpt represents a waypoint, point of interest, or named feature on a map.</li>
+<li><code>rteType</code> rte represents route - an ordered list of waypoints representing a series of turn points leading to a destination.</li>
+<li><code>trkType</code> trk represents a track - an ordered list of points describing a path.</li>
+</ul>
+<p>Given the definitions and examples above. I find that the Beeline app should be using the <code>rteType</code> instead of individual waypoints for a route. Because that is what it's designed for. Also, the <code>trkType</code> is meant for tracks and it seems Beeline is using <code>rteType</code> for that.</p>
+<p>As a good user, I obviously raised a ticket with Beeline, providing as much details as possible. I was then gracefully thanked for my suggestions and informed that my feedback was forwarded up the chain. Great! But knowing that technical feedback like this often gets dismissed as subjective interpretation rather than standards compliance, I knew I had to work on a solution in the meantime.</p>
+<h3>Solution</h3>
+<p>Knowing the differences between the formats, the workaround was relatively straightforward: I <em>only</em> had to transform the MyRouteApp gpx to a Beeline gpx. To make my MyRouteApp gpx compatible with the Beeline app I decided to:</p>
+<ul>
+<li>transform the MyRouteApp  <code>&lt;rtept&gt;</code> nodes to <code>&lt;wpt&gt;</code> nodes.</li>
+<li>transform the MyRouteApp <code>&lt;trkseg&gt;</code> to a <code>&lt;rte&gt;</code>.</li>
+</ul>
+<p>My first test file was hacked together using some good old copy, paste search and replaces.</p>
+<p><strong>Et voila!</strong> Upon importing my newly created gpx I was greeted by another option: <em>&quot;Points de cheminement uniquem...&quot;</em>.
+Which translates to the &quot;Waypoints only import mode&quot; mentioned by Beeline above.
+<picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-screenshot.jpeg&width=250&format=webp&via=transform 250w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-screenshot.jpeg&width=250&format=jpeg&via=transform" alt="Phone screenshot" class="centerImage" width="250" height="541"></picture>
+<small>P.S. Pardon my French, I set my phone to French as a part of my language learning process. </small></p>
+<h3>Sound great? There's just one caveat</h3>
+<p>This methods imports the waypoints added in the MyRouteApp but <em>will re-calculate</em> the route in between them. If you want the Beeline to calculate the same or near similar route, I advise you to take an extra 15 min to add waypoints on every main road change. My approach looked like this:</p>
+<p><picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-mra-screenshot.png&width=600&format=webp&via=transform 600w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-mra-screenshot.png&width=600&format=jpeg&via=transform" alt="MRA screenshot" class="centerImage" width="600" height="696"></picture></p>
+<h3>Automated solution</h3>
+<p>Obviously I wasn't planning on manually editing gpx files every time I wanted to use one of my routes.
+So I decided to make a tool that will transform the file for me. And since there are other users with the same issue, I thought it would be nice to share my solution and make it available to anyone that can benefit from it. The solution is simple:</p>
+<ul>
+<li>A small webform takes a gpx file as input and let's the user download the transformed result.</li>
+<li>The transformation is done by a script written in JavaScript that executes a XSLT (eXtensible Stylesheet Language Transformations). For those unfamiliar but curious: Check out this <a href="https://www.w3schools.com/xml/xsl_intro.asp">Introduction</a> on XSLT.</li>
+<li>This all runs within the users browser. Which means I only have to host the static files and don't need worry about running a service.</li>
+</ul>
+<p>You can find the result <a href="https://data-integration.dev/utils/myrouteapp-to-beeline">here</a></p>
+<h3>Thats it!</h3>
+<p>My short road side frustration turned into a deep dive into gpx files and how to integrate the MyRouteApp format with my Beeline. While I hope that Beeline will eventually improve their compatibility, in the meantime my tool will provide a practical solution. If you're facing similar issues, give the tool a try and let me know how it works for your routes. <em>Happy riding!</em></p>
+
+    </section>
   </div>
 </div>
 </main>
