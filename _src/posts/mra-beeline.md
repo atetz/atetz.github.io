@@ -5,7 +5,7 @@ date: 2025-05-28
 
 <details name="TLDR">
   <summary>In a hurry? Click here for a TLDR</summary>
-  <p>While testing out my new Beeline Moto II motorbike navigation, I ran into some compatibility issues with my routes created with MyRouteApp. Namely, losing the turn-by-turn navigation while going off track. My short roadside frustration turned into a deep dive into GPX files and how to integrate the MyRouteApp format with my Beeline. Upon inspecting both files, I noticed a difference in the GPX file structure. Since a GPX is defined in XML, I decided to make a tool in vanilla JavaScript and XSL that will transform the file for me. And since there are other users with the same issue, I thought it would be nice to share my solution and make it available to anyone that can benefit from it. You can find the tool <a href="/utils/MyRouteApp-to-beeline" target = "_self">here</a></p>
+  <p>While testing out my new Beeline Moto II motorbike navigation, I ran into some compatibility issues with my routes created with MyRouteApp. Namely, losing the turn-by-turn navigation while going off track. My short roadside frustration turned into a deep dive into GPX files and how to integrate the MyRouteApp format with my Beeline. Upon inspecting both files, I noticed a difference in the GPX file structure. Since a GPX is defined in XML, I decided to make a tool in vanilla JavaScript and XSL that will transform the file for me. And since there are other users with the same issue, I thought it would be nice to share my solution and make it available to anyone that can benefit from it. You can find the tool <a href="/utils/myrouteapp-to-beeline" target = "_self">here</a></p>
 </details>
 
 ### Intro
@@ -140,7 +140,7 @@ So I decided to make a tool that will transform the file for me. And since there
 - The transformation is done by a script written in JavaScript that executes a XSLT (eXtensible Stylesheet Language Transformations). For those unfamiliar but curious: Check out this [Introduction](https://www.w3schools.com/XML/xsl_intro.asp) on XSLT.
 - This all runs within the users browser. Which means I only have to host the static files and don't need worry about running a service.
 
-You can find the result [here](https://data-integration.dev/utils/MyRouteApp-to-beeline)
+You can find the result [here](https://data-integration.dev/utils/myrouteapp-to-beeline)
 
 ### Thats it!
 My short road side frustration turned into a deep dive into GPX files and how to integrate the MyRouteApp format with my Beeline. While I hope that Beeline will eventually improve their compatibility, in the meantime my tool will provide a practical solution. If you're facing similar issues, give the tool a try and let me know how it works for your routes. *Happy riding!*
