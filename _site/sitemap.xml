@@ -23,17 +23,17 @@
     
         <url>
             <loc>/posts/webdesign/</loc>
-            <lastmod>2025-05-26T10:15:39.722Z</lastmod>
+            <lastmod>2025-05-26T00:00:00.000Z</lastmod>
+        </url>
+    
+        <url>
+            <loc>/posts/mra-beeline/</loc>
+            <lastmod>2025-05-28T00:00:00.000Z</lastmod>
         </url>
     
         <url>
             <loc>/utils/myrouteapp-to-beeline/</loc>
             <lastmod>2025-05-28T12:49:23.310Z</lastmod>
-        </url>
-    
-        <url>
-            <loc>/posts/mra-beeline/</loc>
-            <lastmod>2025-05-28T12:50:50.711Z</lastmod>
         </url>
     
 </urlset>

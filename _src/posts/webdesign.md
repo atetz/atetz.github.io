@@ -1,6 +1,6 @@
 ---
 title: How did I make this page?
-date: Last Modified
+date: 2025-05-26
 ---
 My goal was to make a simple page that would enable me to write something about myself and what I do. And it should also be a spot where I could share my ideas. I heard about Github pages before and I wanted to give it a go. Naturally I found loads of resources naming jekyll. 
 

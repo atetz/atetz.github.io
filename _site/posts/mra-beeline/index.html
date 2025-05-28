@@ -56,11 +56,11 @@
 </hgroup>
   <details name="TLDR">
   <summary>In a hurry? Click here for a TLDR</summary>
-  <p>Testing out my new Beeline Moto II motorbike navigation, I ran into some compatibility issues with my routes created with the MyRouteApp. Upon inspecting both files I noticed a difference in the gpx file structure. Since a gpx is defined in XML I created small tool using JavaScript and XSLT to convert the MyrouteApp file to a Beeline compatible file. You can find the tool <a href="/utils/myrouteapp-to-beeline" target="_self">here</a></p>
+  <p>Testing out my new Beeline Moto II motorbike navigation, I ran into some compatibility issues with my routes created with the MyRouteApp. Upon inspecting both files I noticed a difference in the gpx file structure. Since a gpx is defined in XML I created small tool using JavaScript and XSLT to convert the MyRouteApp file to a Beeline compatible file. You can find the tool <a href="/utils/MyRouteApp-to-beeline" target="_self">here</a></p>
 </details>
 <h3>Intro</h3>
 <p><picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-bike.jpeg&width=300&format=webp&via=transform 300w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-bike.jpeg&width=300&format=jpeg&via=transform" alt="Triumph Bonneville T120" class="floatRight" width="300" height="225"></picture>One of my favourite ways to enjoy the French outdoors is by riding my motorbike.
-I make it a sport to create a twisty route with nice elevations and new viewpoints that preferably pass a couple of picnic spots along the way. My preferred method was creating a route in <a href="https://www.myrouteapp.com/en">MyRouteApp</a> and using my QuadLock mounted phone for navigation. And this worked quite well.</p>
+I make it a sport to create a twisty route with nice elevations and new viewpoints that preferably pass a couple of picnic spots along the way. My preferred method was creating a route in <a href="https://www.MyRouteApp.com/en">MyRouteApp</a> and using my QuadLock mounted phone for navigation. And this worked quite well.</p>
 <p>But, I wanted a more minimalistic device in my cockpit and I liked the idea of having my phone in my pocket instead of on my bike in case of an emergency.
 So after some <em>&quot;very deep research&quot;</em> on YouTube and Google, I naturally found (or was influenced towards...) the Beeline Moto II.</p>
 <p>Fast forward to unboxing and using the Beeline. I was <strong>super hyped</strong>. I exported my gpx file from MyRouteApp and hit the road. And all went surprisingly well.</p>
@@ -152,7 +152,7 @@ So I decided to make a tool that will transform the file for me. And since there
 <li>The transformation is done by a script written in JavaScript that executes a XSLT (eXtensible Stylesheet Language Transformations). For those unfamiliar but curious: Check out this <a href="https://www.w3schools.com/xml/xsl_intro.asp">Introduction</a> on XSLT.</li>
 <li>This all runs within the users browser. Which means I only have to host the static files and don't need worry about running a service.</li>
 </ul>
-<p>You can find the result <a href="https://data-integration.dev/utils/myrouteapp-to-beeline">here</a></p>
+<p>You can find the result <a href="https://data-integration.dev/utils/MyRouteApp-to-beeline">here</a></p>
 <h3>Thats it!</h3>
 <p>My short road side frustration turned into a deep dive into gpx files and how to integrate the MyRouteApp format with my Beeline. While I hope that Beeline will eventually improve their compatibility, in the meantime my tool will provide a practical solution. If you're facing similar issues, give the tool a try and let me know how it works for your routes. <em>Happy riding!</em></p>
 
