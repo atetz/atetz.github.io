@@ -25,4 +25,8 @@
     - My role & tools used (e.g. “Designed a serverless ETL pipeline using AWS Lambda and Step Functions”)
     - Impact or outcome (e.g. “Reduced data latency by 80%”)
   - Blog
+    - Intro to integration-sandbox
+    - Solve problem with Fluxygen
+    - Solve problem with Azure Logic Apps
+    - Solve problem with n8n
 ~~- Contact~~
