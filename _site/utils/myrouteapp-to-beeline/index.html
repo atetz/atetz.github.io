@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="" data-theme="light">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,13 @@
     <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
     <link rel="stylesheet" href="/bundle.css">
     <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
-  </head>
+    </head><body>
+      <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
   <body>
     <header>
       <div class="container flex-header">
@@ -63,10 +69,10 @@
 
   <h2>Sound great? There's one caveat!</h2>
   <p>
-    This methods imports the waypoints added in the MyRouteApp but _will
-    re-calculate_ the route in between them. If you want the Beeline to
-    calculate the same or near similar route, I advise you to take an extra 15
-    min to add waypoints on every main road change. My approach looked like
+    This methods imports the waypoints added in the MyRouteApp but
+    <i>will re-calculate</i> the route in between them. If you want the Beeline
+    to calculate the same or near similar route, I advise you to take an extra
+    15 min to add waypoints on every main road change. My approach looked like
     this:
     <br>
     <picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-mra-screenshot.png&width=600&format=webp&via=transform 600w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fmra-beeline-mra-screenshot.png&width=600&format=jpeg&via=transform" alt="MRA screenshot" class="centerImage" width="600" height="696"></picture>

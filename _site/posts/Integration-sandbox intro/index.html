@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I built a sandbox to test integration platforms.</title>
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/webp" srcset="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fprofilepic.png&width=512&format=webp&via=transform 512w"><img src="/.11ty/image/?src=_src%2Fassets%2Fimages%2Fprofilepic.png&width=512&format=jpeg&via=transform" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small>Data integrator<i>, lover of outdoors.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      I built a sandbox to test integration platforms.
+    </h2>
+    <p>September 5, 2025</p>
+</hgroup>
+  <p>Say you're in the market for a new integration solution and you want to try a few out before committing. Nearly every platform offers demos or trials. But what then? How are you going to decide whether to fully invest (time, money, training) based on a limited trial experience that may not reflect real-world usage?</p>
+<p>In my experience working with clients, demos are polished to look good, but nothing beats hands-on experience. For trials to succeed you need something meaningful to test. Setting up proper test environments often requires at least VPN access, permissions for other environments or cloud services and IT approvals. This can be challenging and time consuming. So it's tempting to fall back on 'foo', 'bar' examples or the Pokemon API. But will this paint a clear enough picture?</p>
+<h3>The integration sandbox</h3>
+<p>This challenge has led me to build an <a href="https://github.com/atetz/integration-sandbox">integration sandbox</a>. The sandbox provides the mock endpoints to test against, so I can test integration flows immediately. My goal was to evaluate how platforms handle common integration patterns:</p>
+<ul>
+<li>Receiving and sending messages via APIs/webhooks</li>
+<li>Data transformation and mapping</li>
+<li>Conditional routing</li>
+<li>Batch processing</li>
+<li>Scheduling</li>
+<li>Error handling</li>
+<li>Authentication</li>
+</ul>
+<p>By testing these features I expect to gain insight into a platform's general usability:</p>
+<ul>
+<li>Learning Curve: How quickly can someone become productive?</li>
+<li>Developer Experience: How pleasant is the platform for day-to-day work? Think of debugging, data mapping, error messages, documentation.</li>
+<li>Implementation Speed: Time from trial start to working integration.</li>
+<li>Security Basics: Authentication handling, endpoint security, secrets management</li>
+</ul>
+<p><em>Note: This leaves out performance and scalability. Any serious performance testing would require enterprise-scale infrastructure and realistic data volumes beyond this evaluation's scope.</em></p>
+<h3>Use case</h3>
+<p>To test these features in a real world (but somewhat simplified) example, I thought of a use case in <em>Transport and Logistics</em>. Specifically the integration between a <strong>Shipper</strong> and a <strong>Broker</strong>.</p>
+<p>Imagine you are a Shipper with a TMS that needs to send orders to a Carrier. The Carrier requires all communication to go through their preferred Broker (visibility platform).
+The integration platform sits in the middle, translating the TMS data to the Broker and vice versa.</p>
+<pre class="mermaid">
+	sequenceDiagram
+	participant TMS as TMS / Shipper
+	participant IP as Integration platform
+	participant VP as Broker / Visibility platform
+	
+	box transparent Sandbox
+	participant TMS
+	end
+	box transparent Sandbox
+	participant VP
+	end
+
+	TMS->>IP: New shipment
+	IP->>VP: Create order
+	VP->>IP: New event
+	IP->>TMS: Create event
+</pre>
+<p>The sandbox mocks both the TMS and Broker ends of the integration use case and has REST API endpoints to authenticate, seed, trigger, get and create either TMS shipments or Broker events. It's the job of the integrator to make both mock systems work together. Here's an example of a process flow that you can integrate:</p>
+<pre class="mermaid">
+flowchart TD
+A@{ shape: circle, label: "start" } --> B
+B@{ shape: rect, label: "get new shipments" } --> C
+subgraph for each shipment
+	C@{shape: lean-r, label: "transform to order"} --> D
+	D@{shape: rect, label: "post order"} --> E
+	E@{shape: rect, label: "log result"}
+end
+E --> F@{shape: diam, label: "success?"}
+		F --> |Yes| G@{shape: framed-circle, label: "End"}
+		F --> |No| H@{shape: rect, label: "Handle errors"}
+ 
+</pre>
+<ol>
+<li>Scheduler starts the process</li>
+<li>Get new shipments from the /tms/shipments endpoint</li>
+<li>Split shipments payload into a sequence of single shipments (for each)
+<ol>
+<li>Perform a data mapping to the broker format</li>
+<li>Create the order with the /broker/order endpoint</li>
+<li>Log the result</li>
+</ol>
+</li>
+<li>Check the aggregated results for errors and handle if necessary.</li>
+</ol>
+<h3>Technical</h3>
+<p>I designed the sandbox with simplicity in mind. It should also be easy to maintain and test for a single developer. I wanted to run it in a container and have the possibility to deploy and use it anywhere. At this stage I'm not really concerned about high performance.</p>
+<p>The mock APIs are built with Python and <a href="https://fastapi.tiangolo.com/">FastAPI</a>. I chose FastAPI because it goes hand in hand with Pydantic dataclasses and has a complete set of features like security, easy serialisation and deserialisation of json and the automatic generation of swagger docs. The TMS and Broker endpoints both use different JSON payloads that are generated using the <a href="https://faker.readthedocs.io/en/master/">Faker</a> library. The generated data is saved in a SQLite database so that I can later validate the incoming transformations against a set of business rules. Users will get a corresponding HTTP response code with the result of their requests. If something fails users get detailed error messages.</p>
+<h3>Get started</h3>
+<p>Want to try it yourself? The sandbox is available as a Docker image:
+<code>docker run -d -p 8000:8000 atetz/integration-sandbox:latest</code></p>
+<p>Once running, you can access the API documentation at <code>http://localhost:8000/docs</code> and start building your integration flows immediately. The mapping specifications can be found in the <a href="https://github.com/atetz/integration-sandbox/tree/main/docs/integrations">repo</a>!
+I also have it running in AWS Lightsail with minimal effort.</p>
+<h3>What's next?</h3>
+<p>In the next weeks I'm going to put it to the test with <a href="https://fluxygen.com/">Fluxygen</a>, <a href="https://azure.microsoft.com/en-us/products/logic-apps/">Azure Logic Apps</a> and <a href="https://n8n.io/">n8n</a>.</p>
+<p>What do you think? I'd love to <a href="https://data-integration.dev/contact/">hear your thoughts</a>, experiences, or even just a quick hello!</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container"><small>© Adam Tetz 2025</small></div>
+    </footer>
+  </body>
+</html>
