@@ -1,5 +1,5 @@
 ---
-title: I built a sandbox to test integration platforms.
+title: I built a sandbox to test integration platforms
 date: 2025-09-05
 ---
 Say you're in the market for a new integration solution and you want to try a few out before committing. Nearly every platform offers demos or trials. But what then? How are you going to decide whether to fully invest (time, money, training) based on a limited trial experience that may not reflect real-world usage?
