@@ -140,6 +140,15 @@ h1 {
   text-align: center;
 }
 
+pre.mermaid {
+  text-align: center;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 1rem; /* adjust as needed */
+  font-family: inherit; /* removes monospace font if you don't want it */
+}
+
 @charset "UTF-8";/*!
  * Pico CSS ✨ v2.1.1 (https://picocss.com)
  * Copyright 2019-2025 - Licensed under MIT
