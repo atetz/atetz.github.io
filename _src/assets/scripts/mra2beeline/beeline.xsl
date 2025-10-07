@@ -2,13 +2,13 @@
 
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 xmlns="http://www.topografix.com/GPX/1/1"
                 xmlns:gpx="http://www.topografix.com/GPX/1/1"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" exclude-result-prefixes="#all" expand-text="yes" version="3.0">
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                exclude-result-prefixes="gpx xsi"
+                version="1.0">
     
-    <xsl:output method="xml" indent="yes"/>
-    <xsl:mode on-no-match="fail"/>
+    <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
     
     <xsl:template match="/">
         
