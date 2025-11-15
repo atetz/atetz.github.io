@@ -1,5 +1,5 @@
 ---
-title: TMS to visibility platform integration with Fluxygen
+title: Testing the integration sandbox with Fluxygen
 date: 2025-11-16
 ---
 ## Intro
