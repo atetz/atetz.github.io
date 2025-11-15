@@ -71,27 +71,22 @@
         <xsl:attribute name="type" select="'string'"/>
         <xsl:sequence select="'broker'"/>
       </source>
-      <location>
-        <xsl:attribute name="class" select="'object'"/>
-        <xsl:for-each select="$var2_event/situation/position">
+      <xsl:for-each select="$var2_event/situation/position">
+        <location>
+          <xsl:attribute name="class" select="'object'"/>
           <code>
-            <xsl:attribute name="type" select="'string'"/>
             <xsl:sequence select="fn:string(locationReference)"/>
           </code>
-        </xsl:for-each>
-        <xsl:for-each select="$var2_event/situation/position">
           <latitude>
             <xsl:attribute name="type" select="'number'"/>
             <xsl:sequence select="xs:string(xs:decimal(fn:string(latitude)))"/>
           </latitude>
-        </xsl:for-each>
-        <xsl:for-each select="$var2_event/situation/position">
           <longitude>
             <xsl:attribute name="type" select="'number'"/>
             <xsl:sequence select="xs:string(xs:decimal(fn:string(longitude)))"/>
           </longitude>
-        </xsl:for-each>
-      </location>
+        </location>
+      </xsl:for-each>
     </event>
   </xsl:template>
 </xsl:stylesheet>

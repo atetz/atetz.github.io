@@ -5,5 +5,13 @@
     // this file breaks if it's formatted
     "[sitemap]": {
         "editor.formatOnSave": false
-    }
+    },
+    "spellright.language": [
+        "en"
+    ],
+    "spellright.documentTypes": [
+        "latex",
+        "plaintext",
+        "markdown"
+    ]
 }

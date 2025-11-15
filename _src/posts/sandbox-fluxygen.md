@@ -1,24 +1,24 @@
 ---
 title: TMS to visibility platform integration with Fluxygen
-date: 2025-09-10
+date: 2025-11-16
 ---
 ## Intro
-Recently I wrote about the [integration sandbox]() I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it performs against a platform I know well: [Fluxygen](https://fluxygen.com/). I've used it professionally across e-commerce, transport and logistics, and manufacturing projects.
+Recently I wrote about the [integration sandbox]() I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: [Fluxygen](https://fluxygen.com/). I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.
 
-Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). It's designed for any organisation looking to develop integrations through an intuitive UI without the need for developers. It targets domain experts and application managers who understand their business processes but may not have deep integration development experience. Having worked with the platform for multiple years, I can definitely say that they deliver on their UI promise. What makes it opinionated is that they abstract a lot of the technical details away. This enables organisations to focus on what makes their business processes special. 
+Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without the need for software developers. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability. 
 
-At the same time, integration architecture still requires thinking through data flows, error handling, and business logic. Fluxygen provides all the tools so that organisations can build integrations independently, plus they have a network of industry partners and integration specialists to help you along the way.
+At the same time, integration architecture still requires thinking through data flows, error handling, and business logic. The platform gives you the tools, but doesn't do the thinking for you.
 
-Under the hood, Fluxygen is built on [Apache Camel](), the open source integration framework that implements the *[Enterprise Integration Patterns](https://www.enterpriseintegrationpatterns.com/)* from Gregor Hohpe and Bobby Woolf's book, often referred to as the "integration bible". Fluxygen has made these patterns available through their UI.
+Under the hood, Fluxygen is built on [Apache Camel](https://camel.apache.org/), the open source integration framework that implements the *[Enterprise Integration Patterns](https://www.enterpriseintegrationpatterns.com/)*. Fluxygen uses these patterns throughout their UI and therefore naturally teaches you a universal integration vocabulary.
 
 Let's see how it all comes together in Fluxygen!
 ## Processes walkthrough
 There are two processes in the sandbox that I want to integrate:
 - TMS shipment to Broker order
 - Broker event to TMS event
-As mentioned in the docs, the APIs are secured by OAuth2 authentication. We'll handle this globally for both the processes. Let's have a look at an overview of the processes that we're going to integrate:
+As mentioned in the docs, the APIs are secured. We'll handle this globally for both the processes. Let's have a look at an overview of the processes that we're going to integrate:
 #### Authentication
-The sandbox's APIs are secured by simple OAuth2 username and password authentication that provides a JWT (JSON Web Token). These tokens expire every 15 minutes so we'll need to create a process that refreshes these tokens automatically and enables the other processes to run without manual intervention. 
+The sandbox's APIs are secured by *Simple OAuth2 with Password and Bearer* authentication that provides a JWT (JSON Web Token). These tokens expire every 15 minutes, so we'll need to create a process that refreshes these tokens automatically and enables the other processes to run without manual intervention. 
 <pre class="mermaid">
 flowchart TD
 A@{ shape: circle, label: "start \n(every 10min)" } --> B
@@ -94,7 +94,7 @@ Primarily there are 4 screens that users can work with:
 2. Flow designer - The place where flows are created.
 3. Tenant manager - Lets admins manage users and global settings.
 4. Tenant variables - Create, update and delete global variables.
-[pic here]
+[fluxygen-homescreen.png]
 Integrations in Fluxygen enable messages to flow from point A to point B. This is done by creating flows where users can manage the flow of messages and how they are processed. Processing is orchestrated by adding the right components in the right order. 
 
 Messages have the following structure (just like HTTP messages):
@@ -102,19 +102,22 @@ Messages have the following structure (just like HTTP messages):
 - Body  - Contains the entire message (string or binary).
 The destination of a message is dependent on the next component in the flow or the settings of the component.
 
-[pic here]
-
 There are 4 types of variables in Fluxygen:
-1. On the message level there are message headers. These are the dynamic variables within a flow. For example: if I want to store a result of an http call to a temporary variable, I would use the headers.
-2. Messages also have message properties. Message properties contain metadata about a message and are only for internal use. These cannot be set. For example BodySize, HeadersSize, timestamp.
-3. Flow properties are the static variables of a flow. I primarily use these for base URL's, folder paths, flow specific credentials etc. 
+1. On the message level there are *message headers*. These are the dynamic variables within a flow. For example: if I want to store a result of an http call to a temporary variable, I would use the headers.
+2. Messages also have *message properties*. Message properties contain metadata about a message and are only for internal use. These cannot be set. For example BodySize, HeadersSize, timestamp.
+3. *Flow properties* are the static variables of a flow. I primarily use these for base URL's, folder paths, flow specific credentials that don't automatically rotate etc. 
 4. *Tenant variables*. These can be seen as global variables. I primarily use these for storing credentials that are used by multiple flows.
 ### Building the authentication flow
-As mentioned earlier, the sandbox's APIs requires users to authenticate using OAuth. The type of OAuth is precisely a simple password credentials grant. Which requires the user to send their username and password in a `application/x-www-form-urlencoded` HTTP POST to the API. If all goes well, the user will get a JWT access token that is valid for 15 minutes. 
+As mentioned earlier, the sandbox's APIs requires users to authenticate using OAuth. The type of OAuth is a simple password credentials grant that requires the user to send their username and password in a `application/x-www-form-urlencoded` HTTP POST to the API. If all goes well, the user will get a JWT access token that is valid for 15 minutes. 
 
-Since I want to use the access token from multiple flows, I created a new flow called `get token` that retrieves a new token and stores it in the *tenant variables*. Fluxygen lets you install test and production versions of your flows, and each environment can have their own set of flow properties. Because I wanted the API URL, username, and password to be configurable for different environments, I set them up as flow properties instead of hardcoding them. I also set the tracing of the flow to 1 day. This means that I can view a detailed log of the transactions and that this information is kept for 1 day.
+Since I want to use the access token from multiple flows, I created a new flow called "get token" that retrieves a new token and stores it in the *tenant variables*. Fluxygen lets you install test and production versions of your flows, and each environment can have their own set of flow properties. Because I wanted the API URL, username, and password to be configurable for different environments, I set them up as flow properties instead of hardcoding them. I also set the tracing of the flow to 1 day. This means that I can view a detailed log of the transactions and that this information is kept for 1 day.
 
-I chose to schedule the flow for 10 minutes since this will give me 5 minutes to fix any possible issues. Once the right headers are set for Content-Type and Accept, I set the message body to: `username=#{username}&password=#{password}`. Where the `#{variables}` refer to the flow properties. HINT: These are added via the blue # sign. The body is then sent to the sandbox's token URL via a HTTP POST using the HTTP component. I enabled *Use error route?* which means that once the HTTP component returns a response code outside of the 200-300 range, It will trigger the error route. 
+[get-token-1-overview.png, get-token-2-flow-properties.png]
+-- note this will be Photoswipe
+
+I chose to schedule the flow for 10 minutes since this will give me 5 minutes to fix any possible issues. After I set the Content-Type and Accept headers, I set the message body to: `username=#{username}&password=#{password}`. Where the `#{variables}` refer to the flow properties. These are added via the blue # sign. The body is then sent to the sandbox's token URL via a HTTP POST using the HTTP component. I enabled *Use error route?* which means that once the HTTP component returns a response code outside of the 200-300 range, It will trigger the error route. 
+
+[get-token-3-scheduler.png, get-token-4-setheaders.png, get-token-5-setBody.png, get-token-6-http.png]
 
 If all goes well we should get an HTTP response code of 200 with a message body that looks like this:
 ```
@@ -124,53 +127,76 @@ If all goes well we should get an HTTP response code of 200 with a message body 
 }
 ```
 
-At this point in the flow we know that we only get valid http response codes. `access_token` is the part we are interested in saving to the *tenant variables*, so I set this on a header using JsonPath. JsonPath lets you extract specific values from JSON responses. In this case I can get the access token with: `$.access_token`. But sometimes a valid http status does not necessarily mean that the body is exactly how we want it to be. And I surely do not want to save an empty or invalid value to my variables. To catch these kind of differences I added another header that calculates the length of the JsonPath that I have extracted. This time using a [simple expression](https://camel.apache.org/components/4.14.x/languages/simple-language.html): `${header.access-token?.length()}`. Simple is shipped with Apache Camel and a very powerful language to prevent the use of scripting for simpler use cases. 
+At this point in the flow we know that we only get valid http response codes. `access_token` is the part we are interested in saving to the *tenant variables*, so I set this on a header using JsonPath. JsonPath lets you extract specific values from JSON responses. In this case I can get the access token with: `$.access_token`. 
 
-Next I added a content router that checks if the length of the `access-token-length` header is greater than 0. If so, it will proceed and save the value to the *tenant variables*. Note in the images that I have added the `Bearer ` to the variable. This makes it easier using the value further down the line directly on a `Authorization` header. If not, It stops at a log component. In my example this situation is not handled any further, but this route could for example send a notification or perform some custom handling according to what the business users want to know.
+But sometimes a valid http status does not necessarily mean that the body is exactly how we want it to be. And I surely do not want to save an empty or invalid value to my variables. To catch these kind of differences I added a header to calculate the length of the token. This time using a [simple expression](https://camel.apache.org/components/4.14.x/languages/simple-language.html): `${header.access-token?.length()}`. Simple is a language shipped with Apache Camel that prevents scripting for simpler use cases. 
+
+Next I added a content router that checks if the length of the `access-token-length` header is greater than 0. If so, it will proceed and save the value to the *tenant variables*. Note in the images that I have added the `Bearer ` to the variable. This makes it easier using the value further down the line directly on a `Authorization` header. If not, it stops at a log component. In my example this situation is not handled any further, but this route could for example send a notification or perform some custom handling according to what the business users want to know.
+[get-token-7-content-router.png, get-token-8-set-tenant-var.png]
 ### Installing and checking the authentication flow
 From the flow designer the play icon on the right will let users install a flow in that environment immediately. Once started, the environment will colour green. To check if the flow runs as it should I can quickly navigate to the flow details via the folder icon next to the stop icon. 
 
-The flow details show the general stats first. Here we can see the status of the flow, general settings and how many exchanges were completed, pending or failed. The next tab that I use often is the transactions tab. On this tab it's easy to see how many times the flow has executed and also the exact inputs of every component in the flow. TIP: Since the tracing only shows the input a component, I like to end a branch of a flow with a log component so that I can see all relevant outputs in the tracing. 
+[get-token-9-installed.png]
+
+The flow details show the general stats first. Here we can see the status of the flow, general settings and how many exchanges were completed, pending or failed. The next tab that I use often is the transactions tab. On this tab it's easy to see how many times the flow has executed and also the exact inputs of every component in the flow. Pro tip: Since the tracing only shows the input a component, I like to end a branch of a flow with a log component so that I can see all relevant outputs in the tracing. 
+
+[get-token-11-transactions.png, get-token-12-transactions-expanded.png]
 
 So far so good! There are no errors and every component seems to have processed how I wanted it to. Let's go to the *tenant variables* screen to check if the flow has saved the access token.
+[get-token-13-tenant-variables.png]
 
-Perfect! Now we can start building the TMS shipment to Broker order flow.
+Perfect! 
+Since auth is working, we can now start building the TMS shipment to Broker order flow.
 ### Building the TMS shipment to Broker order flow
-Looking back on the process in the beginning of this article, we know that we want to process new shipments on a schedule. But before we dive into creating the flow we need to make sure that there are new shipments in the sandbox. We can seed a number of shipments by sending an *authenticated HTTP POST request* to `#{base_url}/api/v1/tms/shipments/seed` with the following body:
+As mentioned earlier, we want to process new shipments on a schedule. But before we dive into creating the flow, we need to make sure that there are new shipments in the sandbox. 
+
+We can seed a number of shipments by sending an *authenticated HTTP POST request* to `#{base_url}/api/v1/tms/shipments/seed` with the following body:
 ```json
 {"count": 100}
 ```
 
-TIP: For trivial tasks like these and creating proof of concepts in general, I like to use [Postman](https://www.postman.com/) as my HTTP client. If you're a Postman user then you're in good luck, I have exported my collection for [anyone to use](link to file here). It uses a couple of environment variables and has a small utility script that stores the result of the `/token` call into the variables, which prevents me from copying and pasting the Bearer token every 15min. 
+For tasks like these and creating proof of concepts in general, I like to use [Postman](https://www.postman.com/) as my HTTP client. If you're a Postman user then you're in luck, I have exported my collection for [anyone to use](link to file here). It uses a couple of environment variables and has a small utility script that stores the result of the `/token` call into the variables, which prevents me from copying and pasting the Bearer token every 15min. 
 
-My newly created flow gets a clear and descriptive name that matches the process: *new tms shipment to broker order*. For this process I don't really have a real business requirement of the time schedule so I decided to go for 5 minutes, which is what I regularly encounter. The scheduler will trigger the flow as soon as it is installed. This keeps the feedback loop short for testing. 
+I gave the flow a clear and descriptive name that matches the process: *new tms shipment to broker order*. For this process I don't have a real business requirement for the time schedule so I decided to go with 5 minutes. The scheduler will trigger the flow as soon as it is installed. 
 
-I find a short  feedback loop very important. Over the development of an integration I will have created and tested many iterations rapidly, continually expanding the flow until I'm happy with the result. While this writeup will feel like it's all done in one single stint, imagine that I install and test after adding each component. Sometimes figuring out the right expression or setting and reverting back if necessary. Luckily, Fluxygen handles the versioning for me and creates a new version after each installation. Making it very easy to switch between versions. 
+[shipment-to-broker-1-overview.png ,]
 
-First thing after the flow triggers is setting correct credentials for the request. Since all the preparations are done in the authentication flow, we only need to get the right tenant variable and set the value on a header named Authorization. With the authentication in place, I perform a HTTP GET request to  `#{base_url}/api/v1/tms/shipments/new?limit=10`. I've added the `limit=10` query parameter to have a nice small sample to work with.
+Over the development of an integration I will have created and tested many iterations in a short period of time. Preferably I install and test after adding each component and keep the feedback loop as short as possible. Fluxygen has built-in versioning and requires me to create a new version after any change. This makes it very easy to switch between versions and revert back if necessary. This is very useful for experimenting with expressions.
 
-Ideally the API returns a list of shipments, but there are also cases where there aren't any new shipments to process. To prevent the flow from continuing in the event of no new shipments, I added a filter that checks if the response body isn't null: `${bodyAs(String)} != 'null'`
+The first priority after the flow triggers is setting the correct credentials for the request. Since the authentication flow already stores the token, I only need to get the right tenant variable and set the value on a header named Authorization. 
 
-Now I trust that only a list of shipments is passing through the filter, I can split the message to process each shipment separately. In this context a split works like a *for each*. I configured the split component with JsonPath `$[*]` and set the *Aggregation* to *JSON*. From that point on all of the components attached to the bottom part of the split component are executed *for each shipment*. Let's call this part the sub flow for now. The *Aggregation* setting enables me to collect the result of each execution. I can later use this in the main flow to check if there were any errors. 
+With the authentication in place, I perform a HTTP GET request to  `#{base_url}/api/v1/tms/shipments/new?limit=10`. I've added the `limit=10` query parameter to have a nice small sample to work with.
 
-The sub flows main concern is transforming the shipment and sending it to the broker API. 
+Ideally the API returns a list of shipments, but there are cases where there aren't any new shipments to process. To stop the flow when there are no new shipments, I added a filter that checks if the response body isn't null: `${bodyAs(String)} != 'null'`
+
+Now I can trust that only a list of shipments is passing through the filter, I split the message to process each shipment separately. In this context a split works like a *for each*. I configured the split component with JsonPath `$[*]` and set the *Aggregation* to *JSON*. 
+
+[shipment-to-broker-2-aggregated-split]
+
+From that point on all of the components attached to the bottom part of the split component are executed as a sub-process *for each shipment*. The *Aggregation* setting enables me to collect the result of each sub-process. After all shipments have been processed, the aggregated result is sent back to the main process as output of the split component. I can later use this in the main process to check if there were any errors. 
+
+The sub-process transforms the shipment and sends it to the broker API. 
 One of the things that Fluxygen *unfortunately does not have* is a built in data mapper. Fortunately there are multiple ways to perform a data mapping with some templating or scripting:
 - XML files can be transformed with a XSLT
 - Scripting with JavaScript or GroovyScript
 - Templating with the Velocity templating engine
 
-To stay in the low-code theme, Fluxygen recommends using [Altova MapForce](https://www.altova.com/mapforce) as a mapping tool. MapForce is a very powerful graphical data mapping tool that supports a wide range of data formats. In this case I'll use it to make a XSLT. 
+To stay in the low-code theme, Fluxygen recommends using [Altova MapForce](https://www.altova.com/MapForce) as a mapping tool. MapForce is a very powerful graphical data mapping tool that supports a wide range of data formats. In this case I'll use it to make an XSLT. 
 
 You might think: *XSLT?! But we have been working with JSON!* That's correct! In integration projects, the tool of choice often depends on who will maintain the mappings:
 - Do we want business users to be able to modify mappings themselves (low-code)?
 - Are we okay with all changes requiring developer involvement (code)?
 This means for this use case that we'll introduce some format conversion overhead for the sake of maintainability. And while this may introduce other challenges, I'll show how I deal with them to make them less painful.
 
-Setting up the flow for the XSLT, I first add a *JsonToXMLSimple* component. As the name states, this is a simple component that transforms a JSON body to XML. It has [some quirks](https://academy.fluxygen.com/docs/components/transformations/json_to_xml_simple#array-element-name) but in general I keep this in mind:
-- When I only need *one-way conversion* (JSON→XML→XSLT), JsonToXMLSimple is fine
-- When I need *two-way-conversion* (JSON→XML→JSON) a typed XML with JsonToXML is better.
+For the XSLT setup, I first add a *JsonToXMLSimple* component. As the name states, this is a simple component that transforms a JSON body to XML. It has [some quirks](https://academy.fluxygen.com/docs/components/transformations/json_to_xml_simple#array-element-name) but in general I follow this rule:
+- For *one-way conversion* (JSON→XML→XSLT), JsonToXMLSimple is fine
+- For *two-way-conversion* (JSON→XML→JSON) a typed XML with JsonToXML is better.
 
+<details name="json2xml">
+  <summary><b>Why? Click here for a detailed explanation!</b></summary><p>
+  
 Take for example the JsonToXMLSimple component with the following input:
+
 ```json
 {
     "id": 1,
@@ -195,7 +221,7 @@ This will result in:
 </root>
 ```
 
-Converting the same XMLs back there are a couple of gotchas:
+Converting this XML back to JSON, there are a couple of gotchas:
 
 ```json
 {
@@ -208,8 +234,9 @@ Converting the same XMLs back there are a couple of gotchas:
     ]
 }
 ```
+We can see that id has now lost its integer type. 
 
-We can see that id has now lost its integer type. Let's use the same example, modified slightly to have only a single item in the array:
+Let's use the same example, modified slightly to have only a single item in the array:
 
 ```JSON
 {
@@ -218,9 +245,9 @@ We can see that id has now lost its integer type. Let's use the same example, mo
     "list": "a"
 }
 ```
-The array in list has disappeared!? This is because the XML without types has no context of what type the element had before conversion.
+The array in list has disappeared! This is because the XML without types has no context of what type the element had before conversion.
 
-Let's have a look at the JsonToXml input that adds types:
+Let's have a look at the JsonToXml which preserves types:
 JsonToXml (using the modified input)
 ```JSON
 {
@@ -254,17 +281,16 @@ With types enabled, the result still has the array and the integer type of id is
     ]
 }
 ```
+</p>
+</details>
 
-After converting the JSON to XML I set the shipmentId on a header for later use with an XPath expression: `/shipment/id/text()`. Next in the flow is the XSLT component where I add my XSLT that I created with Mapforce. I have uploaded my XSLT for [anyone to use here](link to file). 
-#### Data mapping
-For several years, MapForce has been a powerful tool in my integration toolbox. I have reached the point where I can deliver a mapping rapidly without needing to code. And most importantly, collaborate with application managers. 
+After converting the JSON to XML, I set the *shipmentId* on a header for later use with an XPath expression: `/shipment/id/text()`. Next is the XSLT component where I add my mapping that I created with MapForce. I have uploaded my mapping for [anyone to use here](link to file). 
 
-However, I have not forgotten the steep learning curve I experienced at the beginning. The vast options of the interface were a bit overwhelming at the start and there are multiple ways to solve a problem. For XSLTs it is good to know that you will still need to understand the basics of XML, XPath and XSLT concepts to effectively build mappings. I find Mozilla's [documentation](https://developer.mozilla.org/en-US/docs/Web/XML) on these subjects very helpful, especially the references on XSLT and XPath. After I have an idea of what I want, I try things out in MapForce while frequently checking the result tab. If I find the result is not what I thought it would be I check the description in the [online documentation](https://www.altova.com/manual/Mapforce/mapforceprofessional/). The descriptions often have smaller examples that help me understand what's what. I also try to think of edge cases the input might have and create several input XMLs that I test manually before generating my XSLT.
+I'm not going to explain MapForce in detail, that could be a whole blogpost in itself. If you are interested in this, then by all means let me know! In the meantime, if you want to get an impression of MapForce I strongly recommend checking out [Altova MapForce and Flowforce overview](https://youtu.be/pAg4mSRsPpI?si=o-MG6TfbxnxOzIPu) by Luke Saunders. 
 
-I'm not going to explain Mapforce in detail, that could be a whole blogpost in itself. If you are interested in this, then by all means let me know! In the meantime, if you want to get an impression of Mapforce I strongly recommend checking out [Altova Mapforce and Flowforce overview](https://youtu.be/pAg4mSRsPpI?si=o-MG6TfbxnxOzIPu) by Luke Saunders. 
+[MapForce-mapping-overview.png]
 
-I'll briefly explain from top to bottom what's going on in the data mapping.
-image here. First, lets quickly refresh our [mapping requirements](https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md).
+I'll briefly explain what's going on in the data mapping (See the full [mapping requirements](https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md) for context).
 - **Un-nest line items to handling units**
 	- Each line_item gets replicated by its total_packages count. So 3 line items with 4, 1, and 3 packages become 8 individual handlingUnits
 - **Concatenate goods descriptions**
@@ -282,42 +308,9 @@ image here. First, lets quickly refresh our [mapping requirements](https://githu
 	- Use shipment id as messageReference
 	- Add fixed senderId and messageFunction
 
-Most of the fields are a direct mapping where a line is connected between the shipment fields on the left and the order fields on the right. Take for example the shipments line items and the orders handling units. Even though we have a business rule that dictates the un-nesting of the *line_items* packages to individual *handlingUnits*, these fields can be directly connected. 
+Next, I have added a *XmlToJson* component with type hints set to true. This creates a perfect JSON for our API which is then sent to the `#{base_url}/api/v1/broker/order` endpoint with the *HTTP* component. This time I set the *Use error route?* option to false. This means that all HTTP response codes will be handled by the flow itself and not the dedicated error flow. 
 
-The first function displayed in the center-top of the image is *replicate-item*. It replicates the line_items node as many times as the value of total packages. And since this function is set on the parent node of the `<element>` inside handlingUnit, the fields are correctly set/replicated for all connected children. The parent context argument tells MapForce which level of the hierarchy to operate on when you're working with nested data. It took me a couple of tries to find the right function for this, I first thought I had to use a *replicate-sequence*. But this would replicate the whole sequence of line_items. 
-
-*User-defined functions* are a great way to capture a specific part of a data mapping into a function. I like to use these for readability of the mapping as a whole and also reusing common logic. The *calcTotalGrossWeight* function contains the logic for calculating the total gross weight of the shipment. Which is a sum of the *package_weight* multiplied by the *total_packages* per line item. To prevent precision differences I explicitly cast the values to a decimal and use a round-half-to-even with a precision of 2. 
-
-The concatenated *goodsDescription* is set by a string-join with the parent context on shipment. Value maps are like a case statement and used for the *package_type* to *packagingQualifier* mapping. 
-
-I used a filter on the stop node that checks if the stop type is PICKUP. If true, the parent context is mapped to pickUp. If false, it is mapped to consignee.
-
-Because I had to use the time and date fields to create a dateTime, I created a user-defined function that I reuse in two places.
-
-Last but not least, I use the current-dateTime function for the messageDate and a custom formatted messageReference.
-
-Continuing with the flow, after the XSLT component I have added a XmlToJson component with type hints set to true. This creates a perfect json for our API which is then sent to the `#{base_url}/api/v1/broker/order` endpoint with the HTTP component. This time I set the *Use error route?* option to false. Which means that all HTTP response codes will be handled by the flow itself and not the dedicated error flow. For this particular part of the flow I decided to catch any result and aggregate them. This is done by adding a content-router after the HTTP component. 
-
-Since I know that the API will return a HTTP 202 on success, I have added the following rule to the content router: `${header.CamelHttpResponseCode} == 202`. Which basically routes all successful responses to a dedicated branch. I then set the body of that branch to:
-```
-{
-	"shipmentId": "${header.shipment-id}",
-	"result":"OK"
-}
-```
-Here we can see why the shipment Id was set on a header. 
-
-All unsuccessful responses are sent to the otherwise branch. There I set the body of the message to the following:
-```
-{
-	"shipmentId": "${header.shipment-id}",
-	"result": "ERROR",
-	"details": ${bodyAs(String)}
-}
-```
-Because I know that any unsuccessful response will contain a error message in the body, I've included the API's error message in the details field with :`${bodyAs(String)}`.
-
-After all shipments have been processed, the main flow will continue with the aggregated result that looks something like this:
+As I mentioned earlier, the result of this sub-process gets aggregated and sent back to the main flow. If I end this sub-process with the result of the API, then the main process will continue with a list of raw API responses (either shipments or error messages). To give the output a uniform structure, I like to add a custom response based on the API result. This makes the aggregated result easier to process:
 
 ```
 [
@@ -337,14 +330,58 @@ After all shipments have been processed, the main flow will continue with the ag
 ]
 ```
 
-In the main flow, the first thing I do after the split component is set a new *breadcrumbId* with the simple expression: `${header.breadcrumbId}-RESULT` The breadcrumbId is a unique id used for tracking messages in the transaction logs. Once a flow starts, all transactions are grouped by this breadcrumbId. Since I aggregated my results I'm not really interested in all the individual transactions and certainly don't want to scroll through all of them before finding my result. Changing this id after the aggregation lets me filter the transaction logs to see only the final aggregated result rather than each individual shipment processing.
+This is done by adding a *content router* after the *HTTP* component. Since I know that the API will return a HTTP 202 on success, I have added the following rule to the content router: 
+`${header.CamelHttpResponseCode} == 202`. This routes all successful responses to a dedicated branch. I then set the body of that branch to:
+```
+{
+	"shipmentId": "${header.shipment-id}",
+	"result":"OK"
+}
+```
+Here we can see why the shipment Id was set on a header. 
 
-What's left is the functional exception handling of the flow. For error handling, we can add a content-router with the JSONPath expression: `$..[?(@.result == 'ERROR')]` and add whatever error handling logic suits our needs. For example send a notification, save it to a database or both.
+All unsuccessful responses are sent to the otherwise branch. I then set the body of that branch to:
+```
+{
+	"shipmentId": "${header.shipment-id}",
+	"result": "ERROR",
+	"details": ${bodyAs(String)}
+}
+```
+Because I know that any unsuccessful response will contain an error message in the body, I've included the API's error message in the details field with :`${bodyAs(String)}`.
 
-Bugs / irritations?
-- Passwords should not be visible.
-- Tenant variable selectable.
-- Jsonpath on headers does not give me same string back
-- Simple operators in header to not set boolean?
-- XmlToJson removes newlines
+In the main flow, the first thing I do after the split component is set a new *breadcrumbId* with the simple expression: `${header.breadcrumbId}-RESULT` The breadcrumbId is a unique id used for tracking messages in the transaction logs. Once a flow starts, all transactions are grouped by this breadcrumbId. 
 
+Since I aggregated my results, I'm not really interested in all the individual transactions and certainly don't want to scroll through all of them before finding my result. Changing this id after the aggregation lets me filter the transaction logs to see only the final aggregated result rather than each individual shipment processing.
+
+[shipment-to-broker-3-tracing.png]
+
+Last thing left in the flow is handling errors. We can add a content-router with the JSONPath expression: `$..[?(@.result == 'ERROR')]` and add whatever error handling logic suits our needs. For example, send a notification, save it to a database or both.
+
+### Building the Broker event to TMS event flow
+If you made it this far then great! I have introduced you to most of the concepts that are needed to build this flow. 
+
+[broker-event-in-1-overview.png]
+
+This flow starts with an *InboundHttps* component that lets me expose a *public* endpoint for receiving HTTP messages. Next, I used a *content router* that validates the incoming *X-API-KEY* header with a flow property. If the header matches my property, it continues the route. If not, then I return an HTTP 401 by setting a "CamelHTTPResponseCode" header with the value 401.
+
+Fluxygen's inbound auth is limited to header filtering. It does not come with an identity and access management (IAM) solution out of the box for securing public endpoints (unfortunately this is not rare in our industry). Fortunately, header filtering includes *X-Forwarded-For* and *X-Real-IP* headers that are injected by the platform's reverse proxy, which can't be spoofed by clients. So IP filtering is also possible, just implemented at the application layer instead of the network level.
+
+If OAuth validation is a hard requirement then you will need an external IAM service like [Keycloak](https://www.keycloak.org/). The rest of the flow is very similar to what I did in the new shipment flow:
+- split the array of events in single events while collecting the responses
+- transform using xslt and send to the sandbox API
+- check the collected responses for potential errors and handle accordingly
+## Wrapping up
+In this post I walked you through the integration processes available in [integration sandbox](https://github.com/atetz/integration-sandbox). Then I explained how to implement them in Fluxygen. First I built a scheduled flow that handled getting, transforming and sending new shipments. And I explained why and how I use each component. 
+
+At the end I showed an example of a flow that can receive events. Here I explained that most of the patterns used are similar. If you followed along, we've covered the basics of:
+- Scheduling / batch processing 
+- Receiving and sending messages via APIs/webhooks 
+- Data transformation and mapping
+- Conditional routing
+- Error handling
+- Authentication
+### What's next? 
+In the next weeksI'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) and [n8n](https://n8n.io).
+
+What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/), experiences, or even just a quick hello!
