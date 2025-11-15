@@ -149,6 +149,13 @@ pre.mermaid {
   font-family: inherit; /* removes monospace font if you don't want it */
 }
 
+code[class*="language-"],
+pre[class*="language-"] code {
+  font-size: 0.8rem !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
 @charset "UTF-8";/*!
  * Pico CSS ✨ v2.1.1 (https://picocss.com)
  * Copyright 2019-2025 - Licensed under MIT

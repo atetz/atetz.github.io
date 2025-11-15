@@ -1,0 +1,119 @@
+{
+  "shipment": {
+    "reference": "ce18ec96-61b5-43f3-91cd-148e1d82f5d2",
+    "carrier": "Cole Ltd Transport",
+    "transportMode": "ROAD",
+    "orders": {
+      "reference": "ce18ec96-61b5-43f3-91cd-148e1d82f5d2",
+      "handlingUnits": [
+        {
+          "grossWeight": 7069.62,
+          "width": 20.88,
+          "length": 138.51,
+          "packagingQualifier": "BL",
+          "height": 115.15
+        },
+        {
+          "grossWeight": 7069.62,
+          "width": 20.88,
+          "length": 138.51,
+          "packagingQualifier": "BL",
+          "height": 115.15
+        },
+        {
+          "grossWeight": 7069.62,
+          "width": 20.88,
+          "length": 138.51,
+          "packagingQualifier": "BL",
+          "height": 115.15
+        },
+        {
+          "grossWeight": 7069.62,
+          "width": 20.88,
+          "length": 138.51,
+          "packagingQualifier": "BL",
+          "height": 115.15
+        },
+        {
+          "grossWeight": 2336.24,
+          "width": 162.91,
+          "length": 71.51,
+          "packagingQualifier": "CY",
+          "height": 31.16
+        },
+        {
+          "grossWeight": 890.43,
+          "width": 95.14,
+          "length": 111.34,
+          "packagingQualifier": "CY",
+          "height": 66.97
+        },
+        {
+          "grossWeight": 890.43,
+          "width": 95.14,
+          "length": 111.34,
+          "packagingQualifier": "CY",
+          "height": 66.97
+        },
+        {
+          "grossWeight": 890.43,
+          "width": 95.14,
+          "length": 111.34,
+          "packagingQualifier": "CY",
+          "height": 66.97
+        }
+      ],
+      "consignee": {
+        "country": "GB",
+        "identification": "LOC-8521",
+        "city": "Leonardtown",
+        "address1": "Studio 6\nGill courts",
+        "postalCode": "WA7 6JT",
+        "latitude": 13.042235,
+        "name": "Williams-Patel",
+        "dates": [
+          {
+            "dateTime": "2025-07-24T06:00:00",
+            "qualifier": "PERIOD_EARLIEST"
+          },
+          {
+            "dateTime": "2025-07-24T17:00:00",
+            "qualifier": "PERIOD_LATEST"
+          }
+        ],
+        "longitude": -168.601537
+      },
+      "quantity": {
+        "grossWeight": 10296.29,
+        "loadingMeters": 14.8
+      },
+      "pickUp": {
+        "country": "IT",
+        "identification": "LOC-9973",
+        "city": "Riva",
+        "address1": "Borgo Buonauro, 27 Piano 6",
+        "postalCode": 81046,
+        "latitude": 9.223782,
+        "name": "Scamarcio e figli",
+        "dates": [
+          {
+            "dateTime": "2025-07-22T06:00:00",
+            "qualifier": "PERIOD_EARLIEST"
+          },
+          {
+            "dateTime": "2025-07-22T17:00:00",
+            "qualifier": "PERIOD_LATEST"
+          }
+        ],
+        "longitude": 123.12346
+      },
+      "goodsDescription": "Commercial grade floor mats for high-traffic areas|Heavy-duty truck tires, new and retreaded options|Industrial conveyor belt sections"
+    }
+  },
+  "meta": {
+    "messageReference": "20250909213726948438948438948438-LTL",
+    "senderId": "Adam's Logistics",
+    "messageDate": "2025-09-09T21:37:26",
+    "messageFunction": 9
+  }
+}
