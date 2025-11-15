@@ -12,7 +12,8 @@
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
     "@quasibit/eleventy-plugin-sitemap": "^2.2.0",
     "mermaid": "^11.12.1",
-    "photoswipe": "^5.4.4"
+    "photoswipe": "^5.4.4",
+    "prism-themes": "^1.9.0"
   },
   "scripts": {
     "build-ghpages": "npx @11ty/eleventy --pathprefix=/atetz.github.io/"

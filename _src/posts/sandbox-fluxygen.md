@@ -130,7 +130,6 @@ I chose to schedule the flow for 10 minutes since this will give me 5 minutes to
 {% galleryImg "/assets/images/fluxygen-sandbox/get-token-3-scheduler.png", "Scheduler details.", 400 %}
 {% galleryImg "/assets/images/fluxygen-sandbox/get-token-4-setheaders.png", "SetHeaders.", 400 %}
 {% galleryImg "/assets/images/fluxygen-sandbox/get-token-5-setBody.png", "SetBody.", 400 %}
-{% galleryImg "/assets/images/fluxygen-sandbox/get-token-4-setheaders.png", "SetHeaders.", 400 %}
 {% endgallery %}
 
 If all goes well we should get an HTTP response code of 200 with a message body that looks like this:
@@ -156,14 +155,24 @@ Next I added a content router that checks if the length of the `access-token-len
 ### Installing and checking the authentication flow
 From the flow designer the play icon on the right will let users install a flow in that environment immediately. Once started, the environment will colour green. To check if the flow runs as it should I can quickly navigate to the flow details via the folder icon next to the stop icon. 
 
-[get-token-9-installed.png]
+{% gallery "getTokenInstalled" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-9-installed.png", "Installed.", 800 %}
+{% endgallery %}
 
 The flow details show the general stats first. Here we can see the status of the flow, general settings and how many exchanges were completed, pending or failed. The next tab that I use often is the transactions tab. On this tab it's easy to see how many times the flow has executed and also the exact inputs of every component in the flow. Pro tip: Since the tracing only shows the input a component, I like to end a branch of a flow with a log component so that I can see all relevant outputs in the tracing. 
 
-[get-token-11-transactions.png, get-token-12-transactions-expanded.png]
+{% gallery "getTokenTransactions" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-11-transactions.png", "Scheduler details.", 400 %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-12-transactions-expanded.png", "Scheduler details.", 400 %}
+{% endgallery %}
+
 
 So far so good! There are no errors and every component seems to have processed how I wanted it to. Let's go to the *tenant variables* screen to check if the flow has saved the access token.
-[get-token-13-tenant-variables.png]
+
+{% gallery "getTokenTenantVars" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-13-tenant-variables.png", "Tenant variables", 800 %}
+{% endgallery %}
+
 
 Perfect! 
 Since auth is working, we can now start building the TMS shipment to Broker order flow.
@@ -171,6 +180,7 @@ Since auth is working, we can now start building the TMS shipment to Broker orde
 As mentioned earlier, we want to process new shipments on a schedule. But before we dive into creating the flow, we need to make sure that there are new shipments in the sandbox. 
 
 We can seed a number of shipments by sending an *authenticated HTTP POST request* to `#{base_url}/api/v1/tms/shipments/seed` with the following body:
+
 ```json
 {"count": 100}
 ```
@@ -179,19 +189,23 @@ For tasks like these and creating proof of concepts in general, I like to use [P
 
 I gave the flow a clear and descriptive name that matches the process: *new tms shipment to broker order*. For this process I don't have a real business requirement for the time schedule so I decided to go with 5 minutes. The scheduler will trigger the flow as soon as it is installed. 
 
-[shipment-to-broker-1-overview.png ,]
+{% gallery "shipmentToBrokerOverview" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/shipment-to-broker-1-overview.png", "Shipment to broker overview.", 800 %}
+{% endgallery %}
 
 Over the development of an integration I will have created and tested many iterations in a short period of time. Preferably I install and test after adding each component and keep the feedback loop as short as possible. Fluxygen has built-in versioning and requires me to create a new version after any change. This makes it very easy to switch between versions and revert back if necessary. This is very useful for experimenting with expressions.
 
 The first priority after the flow triggers is setting the correct credentials for the request. Since the authentication flow already stores the token, I only need to get the right tenant variable and set the value on a header named Authorization. 
 
-With the authentication in place, I perform a HTTP GET request to  `#{base_url}/api/v1/tms/shipments/new?limit=10`. I've added the `limit=10` query parameter to have a nice small sample to work with.
+With the authentication in place, I perform a HTTP GET request to  `{base_url}/api/v1/tms/shipments/new?limit=10`. I've added the `limit=10` query parameter to have a nice small sample to work with.
 
 Ideally the API returns a list of shipments, but there are cases where there aren't any new shipments to process. To stop the flow when there are no new shipments, I added a filter that checks if the response body isn't null: `${bodyAs(String)} != 'null'`
 
 Now I can trust that only a list of shipments is passing through the filter, I split the message to process each shipment separately. In this context a split works like a *for each*. I configured the split component with JsonPath `$[*]` and set the *Aggregation* to *JSON*. 
 
-[shipment-to-broker-2-aggregated-split]
+{% gallery "aggregatedSplit" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/shipment-to-broker-2-aggregated-split.png", "Aggregated split.", 300 %}
+{% endgallery %}
 
 From that point on all of the components attached to the bottom part of the split component are executed as a sub-process *for each shipment*. The *Aggregation* setting enables me to collect the result of each sub-process. After all shipments have been processed, the aggregated result is sent back to the main process as output of the split component. I can later use this in the main process to check if there were any errors. 
 
@@ -258,7 +272,7 @@ We can see that id has now lost its integer type.
 
 Let's use the same example, modified slightly to have only a single item in the array:
 
-```JSON
+```json
 {
     "name": "Example",
     "id": "1",
@@ -269,7 +283,7 @@ The array in list has disappeared! This is because the XML without types has no 
 
 Let's have a look at the JsonToXml which preserves types:
 JsonToXml (using the modified input)
-```JSON
+```json
 {
     "id": 1,
     "name": "Example",
@@ -308,7 +322,10 @@ After converting the JSON to XML, I set the *shipmentId* on a header for later u
 
 I'm not going to explain MapForce in detail, that could be a whole blogpost in itself. If you are interested in this, then by all means let me know! In the meantime, if you want to get an impression of MapForce I strongly recommend checking out [Altova MapForce and Flowforce overview](https://youtu.be/pAg4mSRsPpI?si=o-MG6TfbxnxOzIPu) by Luke Saunders. 
 
-[MapForce-mapping-overview.png]
+{% gallery "mappingOverview" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/mapforce-mapping-overview.png", "MapForce Mapping.", 800 %}
+{% endgallery %}
+
 
 I'll briefly explain what's going on in the data mapping (See the full [mapping requirements](https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md) for context).
 - **Un-nest line items to handling units**
@@ -352,7 +369,7 @@ As I mentioned earlier, the result of this sub-process gets aggregated and sent 
 
 This is done by adding a *content router* after the *HTTP* component. Since I know that the API will return a HTTP 202 on success, I have added the following rule to the content router: 
 `${header.CamelHttpResponseCode} == 202`. This routes all successful responses to a dedicated branch. I then set the body of that branch to:
-```
+```json
 {
 	"shipmentId": "${header.shipment-id}",
 	"result":"OK"
@@ -361,7 +378,7 @@ This is done by adding a *content router* after the *HTTP* component. Since I kn
 Here we can see why the shipment Id was set on a header. 
 
 All unsuccessful responses are sent to the otherwise branch. I then set the body of that branch to:
-```
+```json
 {
 	"shipmentId": "${header.shipment-id}",
 	"result": "ERROR",
@@ -374,14 +391,18 @@ In the main flow, the first thing I do after the split component is set a new *b
 
 Since I aggregated my results, I'm not really interested in all the individual transactions and certainly don't want to scroll through all of them before finding my result. Changing this id after the aggregation lets me filter the transaction logs to see only the final aggregated result rather than each individual shipment processing.
 
-[shipment-to-broker-3-tracing.png]
+{% gallery "shipmentToBrokerTracing" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/shipment-to-broker-3-tracing.png", "Shipment to broker tracing.", 600 %}
+{% endgallery %}
 
 Last thing left in the flow is handling errors. We can add a content-router with the JSONPath expression: `$..[?(@.result == 'ERROR')]` and add whatever error handling logic suits our needs. For example, send a notification, save it to a database or both.
 
 ### Building the Broker event to TMS event flow
 If you made it this far then great! I have introduced you to most of the concepts that are needed to build this flow. 
 
-[broker-event-in-1-overview.png]
+{% gallery "brokerEventIn" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/broker-event-in-1-overview.png", "Broker event in overview.", 1000 %}
+{% endgallery %}
 
 This flow starts with an *InboundHttps* component that lets me expose a *public* endpoint for receiving HTTP messages. Next, I used a *content router* that validates the incoming *X-API-KEY* header with a flow property. If the header matches my property, it continues the route. If not, then I return an HTTP 401 by setting a *CamelHTTPResponseCode* header with the value 401.
 
@@ -392,7 +413,7 @@ If OAuth validation is a hard requirement then you will need an external IAM ser
 - transform using xslt and send to the sandbox API
 - check the collected responses for potential errors and handle accordingly
 ## Wrapping up
-In this post I walked you through the integration processes available in [integration sandbox](https://github.com/atetz/integration-sandbox). Then I explained how to implement them in Fluxygen. First I built a scheduled flow that handled getting, transforming and sending new shipments. And I explained why and how I use each component. 
+In this post I walked you through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox). Then I explained how to implement them in Fluxygen. First I built a scheduled flow that handled getting, transforming and sending new shipments. And I explained why and how I use each component. 
 
 At the end I showed an example of a flow that can receive events. Here I explained that most of the patterns used are similar. If you followed along, we've covered the basics of:
 - Scheduling / batch processing 
@@ -401,6 +422,7 @@ At the end I showed an example of a flow that can receive events. Here I explain
 - Conditional routing
 - Error handling
 - Authentication
+
 ### What's next? 
 In the next weeksI'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) and [n8n](https://n8n.io).
 

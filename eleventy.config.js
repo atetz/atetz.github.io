@@ -125,6 +125,8 @@ export default function (eleventyConfig) {
     "./node_modules/photoswipe/dist/photoswipe.css":
       "/css/photoswipe/photoswipe.css",
     "./node_modules/mermaid/dist": "/js/mermaid",
+    "./node_modules/prism-themes/themes/prism-material-light.css":
+      "/css/prism.css",
   });
   eleventyConfig.addPlugin(syntaxHighlight);
 }
