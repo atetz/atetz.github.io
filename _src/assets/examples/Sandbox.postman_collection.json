@@ -1,0 +1,398 @@
+{
+  "info": {
+    "_postman_id": "2495b31b-7597-4ef2-bbb5-cdba9252c522",
+    "name": "Integration sandbox",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "24502593"
+  },
+  "item": [
+    {
+      "name": "/token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const responseJson = pm.response.json();",
+              "if(typeof responseJson.access_token !== 'undefined'){",
+              "    pm.environment.set(\"oauth_token\", responseJson.access_token);",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "{{username}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/token",
+          "host": ["{{base_url}}"],
+          "path": ["token"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/tms/shipments/seed",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"count\":50}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tms/shipments/seed",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "tms", "shipments", "seed"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/tms/shipments",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"external_reference\": null,\n  \"mode\": \"FTL\",\n  \"equipment_type\": \"CONTAINER\",\n  \"loading_meters\": 10.42,\n  \"customer\": {\n    \"id\": \"90e7aadf-7322-4a6c-bed8-a3eab1c975d8\",\n    \"name\": \"Mcdonald LLC\",\n    \"carrier\": \"Barron-Murillo Transport\"\n  },\n  \"line_items\": [\n    {\n      \"package_type\": \"CYLINDER\",\n      \"stackable\": false,\n      \"height\": 106.53,\n      \"length\": 128.59,\n      \"width\": 186.17,\n      \"length_unit\": \"CM\",\n      \"package_weight\": 5617.8,\n      \"weight_unit\": \"KG\",\n      \"description\": \"Decorative concrete pavers for landscaping projects\",\n      \"total_packages\": 1\n    }\n  ],\n  \"stops\": [\n    {\n      \"type\": \"PICKUP\",\n      \"location\": {\n        \"code\": \"LOC-1026\",\n        \"name\": \"Tintzmann\",\n        \"address\": {\n          \"address\": \"Schomberstr. 25\",\n          \"city\": \"Badoberan\",\n          \"postal_code\": \"38483\",\n          \"country\": \"DE\"\n        },\n        \"latitude\": -69.8687305,\n        \"longitude\": 49.494473\n      },\n      \"planned_date\": \"2025-09-21\",\n      \"planned_time_window_start\": \"06:00:00\",\n      \"planned_time_window_end\": \"17:00:00\"\n    },\n    {\n      \"type\": \"DELIVERY\",\n      \"location\": {\n        \"code\": \"LOC-3814\",\n        \"name\": \"Fernandes\",\n        \"address\": {\n          \"address\": \"avenue Louise Leclerc\",\n          \"city\": \"Duval\",\n          \"postal_code\": \"91504\",\n          \"country\": \"FR\"\n        },\n        \"latitude\": 2.5878425,\n        \"longitude\": 12.782888\n      },\n      \"planned_date\": \"2025-09-24\",\n      \"planned_time_window_start\": \"06:00:00\",\n      \"planned_time_window_end\": \"17:00:00\"\n    }\n  ],\n  \"timeline_events\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tms/shipments",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "tms", "shipments"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/tms/event/shipment_id",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"external_order_reference\": \"ORD-83747\",\n    \"created_at\": \"2025-09-17T15:34:07.241914\",\n    \"event_type\": \"PICKED_UP\",\n    \"occured_at\": \"2025-09-17T16:30:07.241914\",\n    \"source\": \"broker\",\n    \"location\": {\n        \"code\": \"LOC-7330\",\n        \"latitude\": 77.665144,\n        \"longitude\": 31.449173\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tms/event/406d5324-d0ba-46c4-9eb9-e19bc6c3e151",
+          "host": ["{{base_url}}"],
+          "path": [
+            "api",
+            "v1",
+            "tms",
+            "event",
+            "406d5324-d0ba-46c4-9eb9-e19bc6c3e151"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/tms/shipments",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/tms/shipments",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "tms", "shipments"],
+          "query": [
+            {
+              "key": "",
+              "value": "67f055d4-25fe-47ef-a7cf-4c369c406a05",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/tms/shipments/new",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/tms/shipments/new?id=xyz",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "tms", "shipments", "new"],
+          "query": [
+            {
+              "key": "id",
+              "value": "xyz"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/broker/events/seed",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": \"ORDER_LOADED\",\n  \"shipment_ids\":[\"406d5324-d0ba-46c4-9eb9-e19bc6c3e151\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/broker/events/seed",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "broker", "events", "seed"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/broker/events/new",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/broker/events/new",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "broker", "events", "new"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/broker/events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/broker/events",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "broker", "events"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/broker/events",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"d40109bf-c27a-44a7-86ed-cbf0a45a40dc\",\n  \"shipmentId\": \"2d75c319-ead4-4655-96d4-c9188b470c3b\",\n  \"dateTransmission\": \"2025-09-16T03:44:55.399999\",\n  \"owner\": \"Adam's logistics\",\n  \"order\": {\n    \"reference\": \"ORD-87217\",\n    \"eta\": \"2025-09-25T03:16:32.736037\"\n  },\n  \"situation\": {\n    \"event\": \"DRIVING_TO_LOAD\",\n    \"registrationDate\": \"2025-09-16T13:26:00.596158\",\n    \"actualDate\": \"2025-09-16T12:53:00.596158\",\n    \"position\": {\n      \"locationReference\": \"LOC-1026\",\n      \"latitude\": 9.6860825,\n      \"longitude\": -118.172914\n    }\n  },\n  \"carrier\": \"Barron-Murillo Transport\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/broker/events",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "broker", "events"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/broker/order",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"shipment\": {\n        \"reference\": \"406d5324-d0ba-46c4-9eb9-e19bc6c3e151\",\n        \"carrier\": \"Hogan Ltd Transport\",\n        \"transportMode\": \"ROAD\",\n        \"orders\": [\n            {\n                \"reference\": \"406d5324-d0ba-46c4-9eb9-e19bc6c3e151\",\n                \"handlingUnits\": [\n                    {\n                        \"grossWeight\": 7902.35,\n                        \"width\": 114.17,\n                        \"length\": 15.17,\n                        \"packagingQualifier\": \"BX\",\n                        \"height\": 35.82\n                    },\n                    {\n                        \"grossWeight\": 7902.35,\n                        \"width\": 114.17,\n                        \"length\": 15.17,\n                        \"packagingQualifier\": \"BX\",\n                        \"height\": 35.82\n                    },\n                    {\n                        \"grossWeight\": 7902.35,\n                        \"width\": 114.17,\n                        \"length\": 15.17,\n                        \"packagingQualifier\": \"BX\",\n                        \"height\": 35.82\n                    },\n                    {\n                        \"grossWeight\": 6086.55,\n                        \"width\": 181.15,\n                        \"length\": 63.67,\n                        \"packagingQualifier\": \"BL\",\n                        \"height\": 191.5\n                    },\n                    {\n                        \"grossWeight\": 6086.55,\n                        \"width\": 181.15,\n                        \"length\": 63.67,\n                        \"packagingQualifier\": \"BL\",\n                        \"height\": 191.5\n                    },\n                    {\n                        \"grossWeight\": 6086.55,\n                        \"width\": 181.15,\n                        \"length\": 63.67,\n                        \"packagingQualifier\": \"BL\",\n                        \"height\": 191.5\n                    },\n                    {\n                        \"grossWeight\": 11870.4,\n                        \"width\": 45.82,\n                        \"length\": 48.92,\n                        \"packagingQualifier\": \"PL\",\n                        \"height\": 23.45\n                    },\n                    {\n                        \"grossWeight\": 11870.4,\n                        \"width\": 45.82,\n                        \"length\": 48.92,\n                        \"packagingQualifier\": \"PL\",\n                        \"height\": 23.45\n                    },\n                    {\n                        \"grossWeight\": 11870.4,\n                        \"width\": 45.82,\n                        \"length\": 48.92,\n                        \"packagingQualifier\": \"PL\",\n                        \"height\": 23.45\n                    },\n                    {\n                        \"grossWeight\": 11870.4,\n                        \"width\": 45.82,\n                        \"length\": 48.92,\n                        \"packagingQualifier\": \"PL\",\n                        \"height\": 23.45\n                    },\n                    {\n                        \"grossWeight\": 11870.4,\n                        \"width\": 45.82,\n                        \"length\": 48.92,\n                        \"packagingQualifier\": \"PL\",\n                        \"height\": 23.45\n                    },\n                    {\n                        \"grossWeight\": 6039.99,\n                        \"width\": 94.71,\n                        \"length\": 85.1,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 107.1\n                    },\n                    {\n                        \"grossWeight\": 6039.99,\n                        \"width\": 94.71,\n                        \"length\": 85.1,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 107.1\n                    },\n                    {\n                        \"grossWeight\": 6039.99,\n                        \"width\": 94.71,\n                        \"length\": 85.1,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 107.1\n                    },\n                    {\n                        \"grossWeight\": 6039.99,\n                        \"width\": 94.71,\n                        \"length\": 85.1,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 107.1\n                    },\n                    {\n                        \"grossWeight\": 6039.99,\n                        \"width\": 94.71,\n                        \"length\": 85.1,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 107.1\n                    },\n                    {\n                        \"grossWeight\": 6708.94,\n                        \"width\": 138.39,\n                        \"length\": 127.12,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 155.31\n                    },\n                    {\n                        \"grossWeight\": 6708.94,\n                        \"width\": 138.39,\n                        \"length\": 127.12,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 155.31\n                    },\n                    {\n                        \"grossWeight\": 6708.94,\n                        \"width\": 138.39,\n                        \"length\": 127.12,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 155.31\n                    },\n                    {\n                        \"grossWeight\": 4789.97,\n                        \"width\": 162.83,\n                        \"length\": 171.45,\n                        \"packagingQualifier\": \"BX\",\n                        \"height\": 25.47\n                    },\n                    {\n                        \"grossWeight\": 4789.97,\n                        \"width\": 162.83,\n                        \"length\": 171.45,\n                        \"packagingQualifier\": \"BX\",\n                        \"height\": 25.47\n                    },\n                    {\n                        \"grossWeight\": 9690.5,\n                        \"width\": 62.17,\n                        \"length\": 98.91,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 37.81\n                    },\n                    {\n                        \"grossWeight\": 9690.5,\n                        \"width\": 62.17,\n                        \"length\": 98.91,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 37.81\n                    },\n                    {\n                        \"grossWeight\": 9690.5,\n                        \"width\": 62.17,\n                        \"length\": 98.91,\n                        \"packagingQualifier\": \"CL\",\n                        \"height\": 37.81\n                    },\n                    {\n                        \"grossWeight\": 1381.8,\n                        \"width\": 125.64,\n                        \"length\": 45.47,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 45.85\n                    },\n                    {\n                        \"grossWeight\": 1381.8,\n                        \"width\": 125.64,\n                        \"length\": 45.47,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 45.85\n                    },\n                    {\n                        \"grossWeight\": 1381.8,\n                        \"width\": 125.64,\n                        \"length\": 45.47,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 45.85\n                    },\n                    {\n                        \"grossWeight\": 1381.8,\n                        \"width\": 125.64,\n                        \"length\": 45.47,\n                        \"packagingQualifier\": \"CR\",\n                        \"height\": 45.85\n                    },\n                    {\n                        \"grossWeight\": 8348.63,\n                        \"width\": 92.22,\n                        \"length\": 109.12,\n                        \"packagingQualifier\": \"BL\",\n                        \"height\": 51.84\n                    },\n                    {\n                        \"grossWeight\": 8348.63,\n                        \"width\": 92.22,\n                        \"length\": 109.12,\n                        \"packagingQualifier\": \"BL\",\n                        \"height\": 51.84\n                    },\n                    {\n                        \"grossWeight\": 8348.63,\n                        \"width\": 92.22,\n                        \"length\": 109.12,\n                        \"packagingQualifier\": \"BL\",\n                        \"height\": 51.84\n                    },\n                    {\n                        \"grossWeight\": 3013.5,\n                        \"width\": 39.85,\n                        \"length\": 148.6,\n                        \"packagingQualifier\": \"OT\",\n                        \"height\": 131.3\n                    },\n                    {\n                        \"grossWeight\": 3013.5,\n                        \"width\": 39.85,\n                        \"length\": 148.6,\n                        \"packagingQualifier\": \"OT\",\n                        \"height\": 131.3\n                    },\n                    {\n                        \"grossWeight\": 3013.5,\n                        \"width\": 39.85,\n                        \"length\": 148.6,\n                        \"packagingQualifier\": \"OT\",\n                        \"height\": 131.3\n                    },\n                    {\n                        \"grossWeight\": 3013.5,\n                        \"width\": 39.85,\n                        \"length\": 148.6,\n                        \"packagingQualifier\": \"OT\",\n                        \"height\": 131.3\n                    }\n                ],\n                \"consignee\": {\n                    \"country\": \"DE\",\n                    \"identification\": \"LOC-9004\",\n                    \"city\": \"Hannover\",\n                    \"address1\": \"Segebahnstraße 76\",\n                    \"postalCode\": \"11666\",\n                    \"latitude\": 44.7743115,\n                    \"name\": \"Mühle GmbH\",\n                    \"dates\": [\n                        {\n                            \"dateTime\": \"2025-09-25T06:00:00\",\n                            \"qualifier\": \"PERIOD_EARLIEST\"\n                        },\n                        {\n                            \"dateTime\": \"2025-09-25T17:00:00\",\n                            \"qualifier\": \"PERIOD_LATEST\"\n                        }\n                    ],\n                    \"longitude\": -160.097804\n                },\n                \"quantity\": {\n                    \"grossWeight\": 232924,\n                    \"loadingMeters\": 10.7\n                },\n                \"pickUp\": {\n                    \"country\": \"IT\",\n                    \"identification\": \"LOC-7330\",\n                    \"city\": \"Cascina Restelli\",\n                    \"address1\": \"Strada Laura, 0\",\n                    \"postalCode\": \"19013\",\n                    \"latitude\": -26.2330645,\n                    \"name\": \"Cibin-Chindamo e figli\",\n                    \"dates\": [\n                        {\n                            \"dateTime\": \"2025-09-21T06:00:00\",\n                            \"qualifier\": \"PERIOD_EARLIEST\"\n                        },\n                        {\n                            \"dateTime\": \"2025-09-21T17:00:00\",\n                            \"qualifier\": \"PERIOD_LATEST\"\n                        }\n                    ],\n                    \"longitude\": 77.534203\n                },\n                \"goodsDescription\": \"Commercial grade floor mats for high-traffic areas|Aluminum extrusions for window frame manufacturing|Heavy-duty truck tires, new and retreaded options|Commercial grade carpet tiles for office spaces|Bulk toilet paper for institutional facilities|Fiberglass panels for building exteriors|Liquid soap concentrate in plastic containers|Commercial grade carpet cleaning equipment|Bulk vegetable oil for food service industry|Industrial paper rolls for packaging applications\"\n            }\n        ]\n    },\n    \"meta\": {\n        \"messageReference\": \"20250917114116375856375856375856-FTL\",\n        \"senderId\": \"Adam's Logistics\",\n        \"messageDate\": \"2025-09-17T11:41:16\",\n        \"messageFunction\": 9\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/broker/order",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "broker", "order"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/trigger/shipments",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"target_url\": \"{{target_url}}\",\n  \"count\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/trigger/shipments",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "trigger", "shipments"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/api/v1/trigger/events",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oauth_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"target_url\": \"{{target_url}}\",\n    \"event\": \"DRIVING_TO_LOAD\",\n    \"shipment_ids\": [\n        \"861e550e-1bb5-4ffb-82e1-baa15e5b3b9b\"\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/trigger/events",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "trigger", "events"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{oauth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [""]
+      }
+    }
+  ]
+}

@@ -90,3 +90,5 @@ lerna-debug.log
 Thumbs.db
 
 *.obsidian*
+_site/
+_site/*
