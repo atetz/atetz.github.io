@@ -3,7 +3,7 @@ title: TMS to visibility platform integration with Fluxygen
 date: 2025-11-16
 ---
 ## Intro
-Recently I wrote about the [integration sandbox]() I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: [Fluxygen](https://fluxygen.com/). I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.
+Recently I wrote about the [integration sandbox](https://github.com/atetz/integration-sandbox) I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: [Fluxygen](https://fluxygen.com/). I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.
 
 Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without the need for software developers. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability. 
 
@@ -155,7 +155,7 @@ We can seed a number of shipments by sending an *authenticated HTTP POST request
 {"count": 100}
 ```
 
-For tasks like these and creating proof of concepts in general, I like to use [Postman](https://www.postman.com/) as my HTTP client. If you're a Postman user then you're in luck, I have exported my collection for [anyone to use](link to file here). It uses a couple of environment variables and has a small utility script that stores the result of the `/token` call into the variables, which prevents me from copying and pasting the Bearer token every 15min. 
+For tasks like these and creating proof of concepts in general, I like to use [Postman](https://www.postman.com/) as my HTTP client. If you're a Postman user then you're in luck, I have exported my collection for [anyone to use](/assets/examples/Sandbox.postman_collection.json). It uses a couple of environment variables and has a small utility script that stores the result of the `/token` call into the variables, which prevents me from copying and pasting the Bearer token every 15min. 
 
 I gave the flow a clear and descriptive name that matches the process: *new tms shipment to broker order*. For this process I don't have a real business requirement for the time schedule so I decided to go with 5 minutes. The scheduler will trigger the flow as soon as it is installed. 
 
@@ -284,7 +284,7 @@ With types enabled, the result still has the array and the integer type of id is
 </p>
 </details>
 
-After converting the JSON to XML, I set the *shipmentId* on a header for later use with an XPath expression: `/shipment/id/text()`. Next is the XSLT component where I add my mapping that I created with MapForce. I have uploaded my mapping for [anyone to use here](link to file). 
+After converting the JSON to XML, I set the *shipmentId* on a header for later use with an XPath expression: `/shipment/id/text()`. Next is the XSLT component where I add my mapping that I created with MapForce. I have uploaded my [shipment mapping](/assets/xslt/fluxygen-shipment-to-broker-order.xslt) and [event mapping](/assets/xslt/fluxygen-broker-to-shipment-event.xslt) for anyone to use.
 
 I'm not going to explain MapForce in detail, that could be a whole blogpost in itself. If you are interested in this, then by all means let me know! In the meantime, if you want to get an impression of MapForce I strongly recommend checking out [Altova MapForce and Flowforce overview](https://youtu.be/pAg4mSRsPpI?si=o-MG6TfbxnxOzIPu) by Luke Saunders. 
 
@@ -312,7 +312,7 @@ Next, I have added a *XmlToJson* component with type hints set to true. This cre
 
 As I mentioned earlier, the result of this sub-process gets aggregated and sent back to the main flow. If I end this sub-process with the result of the API, then the main process will continue with a list of raw API responses (either shipments or error messages). To give the output a uniform structure, I like to add a custom response based on the API result. This makes the aggregated result easier to process:
 
-```
+```json
 [
 	{
 		"shipmentId": 1,
@@ -363,7 +363,7 @@ If you made it this far then great! I have introduced you to most of the concept
 
 [broker-event-in-1-overview.png]
 
-This flow starts with an *InboundHttps* component that lets me expose a *public* endpoint for receiving HTTP messages. Next, I used a *content router* that validates the incoming *X-API-KEY* header with a flow property. If the header matches my property, it continues the route. If not, then I return an HTTP 401 by setting a "CamelHTTPResponseCode" header with the value 401.
+This flow starts with an *InboundHttps* component that lets me expose a *public* endpoint for receiving HTTP messages. Next, I used a *content router* that validates the incoming *X-API-KEY* header with a flow property. If the header matches my property, it continues the route. If not, then I return an HTTP 401 by setting a *CamelHTTPResponseCode* header with the value 401.
 
 Fluxygen's inbound auth is limited to header filtering. It does not come with an identity and access management (IAM) solution out of the box for securing public endpoints (unfortunately this is not rare in our industry). Fortunately, header filtering includes *X-Forwarded-For* and *X-Real-IP* headers that are injected by the platform's reverse proxy, which can't be spoofed by clients. So IP filtering is also possible, just implemented at the application layer instead of the network level.
 

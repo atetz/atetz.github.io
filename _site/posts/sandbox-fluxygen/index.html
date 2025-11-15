@@ -61,7 +61,7 @@
     <p>November 16, 2025</p>
 </hgroup>
   <h2>Intro</h2>
-<p>Recently I wrote about the <a href="">integration sandbox</a> I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: <a href="https://fluxygen.com/">Fluxygen</a>. I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.</p>
+<p>Recently I wrote about the <a href="https://github.com/atetz/integration-sandbox">integration sandbox</a> I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: <a href="https://fluxygen.com/">Fluxygen</a>. I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.</p>
 <p>Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without the need for software developers. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability.</p>
 <p>At the same time, integration architecture still requires thinking through data flows, error handling, and business logic. The platform gives you the tools, but doesn't do the thinking for you.</p>
 <p>Under the hood, Fluxygen is built on <a href="https://camel.apache.org/">Apache Camel</a>, the open source integration framework that implements the <em><a href="https://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</a></em>. Fluxygen uses these patterns throughout their UI and therefore naturally teaches you a universal integration vocabulary.</p>
@@ -204,7 +204,7 @@ Since auth is working, we can now start building the TMS shipment to Broker orde
 <p>We can seed a number of shipments by sending an <em>authenticated HTTP POST request</em> to <code>#{base_url}/api/v1/tms/shipments/seed</code> with the following body:</p>
 <pre><code class="language-json">{&quot;count&quot;: 100}
 </code></pre>
-<p>For tasks like these and creating proof of concepts in general, I like to use <a href="https://www.postman.com/">Postman</a> as my HTTP client. If you're a Postman user then you're in luck, I have exported my collection for [anyone to use](link to file here). It uses a couple of environment variables and has a small utility script that stores the result of the <code>/token</code> call into the variables, which prevents me from copying and pasting the Bearer token every 15min.</p>
+<p>For tasks like these and creating proof of concepts in general, I like to use <a href="https://www.postman.com/">Postman</a> as my HTTP client. If you're a Postman user then you're in luck, I have exported my collection for <a href="/assets/examples/Sandbox.postman_collection.json">anyone to use</a>. It uses a couple of environment variables and has a small utility script that stores the result of the <code>/token</code> call into the variables, which prevents me from copying and pasting the Bearer token every 15min.</p>
 <p>I gave the flow a clear and descriptive name that matches the process: <em>new tms shipment to broker order</em>. For this process I don't have a real business requirement for the time schedule so I decided to go with 5 minutes. The scheduler will trigger the flow as soon as it is installed.</p>
 <p>[shipment-to-broker-1-overview.png ,]</p>
 <p>Over the development of an integration I will have created and tested many iterations in a short period of time. Preferably I install and test after adding each component and keep the feedback loop as short as possible. Fluxygen has built-in versioning and requires me to create a new version after any change. This makes it very easy to switch between versions and revert back if necessary. This is very useful for experimenting with expressions.</p>
@@ -307,7 +307,7 @@ JsonToXml (using the modified input)</p>
 </code></pre>
 <p></p>
 </details>
-<p>After converting the JSON to XML, I set the <em>shipmentId</em> on a header for later use with an XPath expression: <code>/shipment/id/text()</code>. Next is the XSLT component where I add my mapping that I created with MapForce. I have uploaded my mapping for [anyone to use here](link to file).</p>
+<p>After converting the JSON to XML, I set the <em>shipmentId</em> on a header for later use with an XPath expression: <code>/shipment/id/text()</code>. Next is the XSLT component where I add my mapping that I created with MapForce. I have uploaded my <a href="/assets/xslt/fluxygen-shipment-to-broker-order.xslt">shipment mapping</a> and <a href="/assets/xslt/fluxygen-broker-to-shipment-event.xslt">event mapping</a> for anyone to use.</p>
 <p>I'm not going to explain MapForce in detail, that could be a whole blogpost in itself. If you are interested in this, then by all means let me know! In the meantime, if you want to get an impression of MapForce I strongly recommend checking out <a href="https://youtu.be/pAg4mSRsPpI?si=o-MG6TfbxnxOzIPu">Altova MapForce and Flowforce overview</a> by Luke Saunders.</p>
 <p>[MapForce-mapping-overview.png]</p>
 <p>I'll briefly explain what's going on in the data mapping (See the full <a href="https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md">mapping requirements</a> for context).</p>
@@ -352,7 +352,7 @@ JsonToXml (using the modified input)</p>
 </ul>
 <p>Next, I have added a <em>XmlToJson</em> component with type hints set to true. This creates a perfect JSON for our API which is then sent to the <code>#{base_url}/api/v1/broker/order</code> endpoint with the <em>HTTP</em> component. This time I set the <em>Use error route?</em> option to false. This means that all HTTP response codes will be handled by the flow itself and not the dedicated error flow.</p>
 <p>As I mentioned earlier, the result of this sub-process gets aggregated and sent back to the main flow. If I end this sub-process with the result of the API, then the main process will continue with a list of raw API responses (either shipments or error messages). To give the output a uniform structure, I like to add a custom response based on the API result. This makes the aggregated result easier to process:</p>
-<pre><code>[
+<pre><code class="language-json">[
 	{
 		&quot;shipmentId&quot;: 1,
 		&quot;result&quot;:&quot;OK&quot;
@@ -391,7 +391,7 @@ JsonToXml (using the modified input)</p>
 <h3>Building the Broker event to TMS event flow</h3>
 <p>If you made it this far then great! I have introduced you to most of the concepts that are needed to build this flow.</p>
 <p>[broker-event-in-1-overview.png]</p>
-<p>This flow starts with an <em>InboundHttps</em> component that lets me expose a <em>public</em> endpoint for receiving HTTP messages. Next, I used a <em>content router</em> that validates the incoming <em>X-API-KEY</em> header with a flow property. If the header matches my property, it continues the route. If not, then I return an HTTP 401 by setting a &quot;CamelHTTPResponseCode&quot; header with the value 401.</p>
+<p>This flow starts with an <em>InboundHttps</em> component that lets me expose a <em>public</em> endpoint for receiving HTTP messages. Next, I used a <em>content router</em> that validates the incoming <em>X-API-KEY</em> header with a flow property. If the header matches my property, it continues the route. If not, then I return an HTTP 401 by setting a <em>CamelHTTPResponseCode</em> header with the value 401.</p>
 <p>Fluxygen's inbound auth is limited to header filtering. It does not come with an identity and access management (IAM) solution out of the box for securing public endpoints (unfortunately this is not rare in our industry). Fortunately, header filtering includes <em>X-Forwarded-For</em> and <em>X-Real-IP</em> headers that are injected by the platform's reverse proxy, which can't be spoofed by clients. So IP filtering is also possible, just implemented at the application layer instead of the network level.</p>
 <p>If OAuth validation is a hard requirement then you will need an external IAM service like <a href="https://www.keycloak.org/">Keycloak</a>. The rest of the flow is very similar to what I did in the new shipment flow:</p>
 <ul>
