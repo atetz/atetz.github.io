@@ -10,7 +10,7 @@
     <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
     </head><body>
       <script type="module">
-        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
         mermaid.initialize({ startOnLoad: true });
       </script>
     </body>
@@ -153,13 +153,21 @@ G@{shape: diam, label: "success?"}
 <p>Nevertheless, I'd still like to explain some core concepts to give some context.
 Primarily there are 4 screens that users can work with:</p>
 <ol>
-<li>Flow manager - Provides high level information of all the flows and lets you view detailed information, such as installation time, errors, successful executions, tracing and logs per flow.</li>
-<li>Flow designer - The place where flows are created.</li>
-<li>Tenant manager - Lets admins manage users and global settings.</li>
-<li>Tenant variables - Create, update and delete global variables.
-[fluxygen-homescreen.png]
-Integrations in Fluxygen enable messages to flow from point A to point B. This is done by creating flows where users can manage the flow of messages and how they are processed. Processing is orchestrated by adding the right components in the right order.</li>
+<li>
+<p>Flow manager - Provides high level information of all the flows and lets you view detailed information, such as installation time, errors, successful executions, tracing and logs per flow.</p>
+</li>
+<li>
+<p>Flow designer - The place where flows are created.</p>
+</li>
+<li>
+<p>Tenant manager - Lets admins manage users and global settings.</p>
+</li>
+<li>
+<p>Tenant variables - Create, update and delete global variables.</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-Homescreen" style="grid-template-columns: repeat(1, 1fr);">                        <a href="/img/MTLnvsJzT3-1184.jpeg" data-pswp-width="1184" data-pswp-height="734" target="_blank" style="text-decoration: none">          <img src="/img/MTLnvsJzT3-500.jpeg" alt="Fluxygen homescreen">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-Homescreen',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+</li>
 </ol>
+<p>Integrations in Fluxygen enable messages to flow from point A to point B. This is done by creating flows where users can manage the flow of messages and how they are processed. Processing is orchestrated by adding the right components in the right order.</p>
 <p>Messages have the following structure (just like HTTP messages):</p>
 <ul>
 <li>Headers -  Contains metadata / header data of the message;</li>
@@ -176,20 +184,18 @@ The destination of a message is dependent on the next component in the flow or t
 <h3>Building the authentication flow</h3>
 <p>As mentioned earlier, the sandbox's APIs requires users to authenticate using OAuth. The type of OAuth is a simple password credentials grant that requires the user to send their username and password in a <code>application/x-www-form-urlencoded</code> HTTP POST to the API. If all goes well, the user will get a JWT access token that is valid for 15 minutes.</p>
 <p>Since I want to use the access token from multiple flows, I created a new flow called &quot;get token&quot; that retrieves a new token and stores it in the <em>tenant variables</em>. Fluxygen lets you install test and production versions of your flows, and each environment can have their own set of flow properties. Because I wanted the API URL, username, and password to be configurable for different environments, I set them up as flow properties instead of hardcoding them. I also set the tracing of the flow to 1 day. This means that I can view a detailed log of the transactions and that this information is kept for 1 day.</p>
-<p>[get-token-1-overview.png, get-token-2-flow-properties.png]
--- note this will be Photoswipe</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-getTokenOverview" style="grid-template-columns: repeat(2, 1fr);">                        <a href="/img/jwX_kJEDhG-1185.jpeg" data-pswp-width="1185" data-pswp-height="643" target="_blank" style="text-decoration: none">          <img src="/img/jwX_kJEDhG-500.jpeg" alt="Overview of get token flow.">        </a>            <a href="/img/bpF9S4nRrN-1399.jpeg" data-pswp-width="1399" data-pswp-height="1213" target="_blank" style="text-decoration: none">          <img src="/img/bpF9S4nRrN-500.jpeg" alt="Flow properties.">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-getTokenOverview',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
 <p>I chose to schedule the flow for 10 minutes since this will give me 5 minutes to fix any possible issues. After I set the Content-Type and Accept headers, I set the message body to: <code>username=#{username}&amp;password=#{password}</code>. Where the <code>#{variables}</code> refer to the flow properties. These are added via the blue # sign. The body is then sent to the sandbox's token URL via a HTTP POST using the HTTP component. I enabled <em>Use error route?</em> which means that once the HTTP component returns a response code outside of the 200-300 range, It will trigger the error route.</p>
-<p>[get-token-3-scheduler.png, get-token-4-setheaders.png, get-token-5-setBody.png, get-token-6-http.png]</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-getTokenDetails" style="grid-template-columns: repeat(2, 1fr);">                        <a href="/img/ZwfZUoz9zt-605.jpeg" data-pswp-width="605" data-pswp-height="547" target="_blank" style="text-decoration: none">          <img src="/img/ZwfZUoz9zt-400.jpeg" alt="Scheduler details.">        </a>            <a href="/img/gWGYK6rQaF-1005.jpeg" data-pswp-width="1005" data-pswp-height="365" target="_blank" style="text-decoration: none">          <img src="/img/gWGYK6rQaF-400.jpeg" alt="SetHeaders.">        </a>            <a href="/img/QWPHgXFvb9-605.jpeg" data-pswp-width="605" data-pswp-height="365" target="_blank" style="text-decoration: none">          <img src="/img/QWPHgXFvb9-400.jpeg" alt="SetBody.">        </a>            <a href="/img/gWGYK6rQaF-1005.jpeg" data-pswp-width="1005" data-pswp-height="365" target="_blank" style="text-decoration: none">          <img src="/img/gWGYK6rQaF-400.jpeg" alt="SetHeaders.">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-getTokenDetails',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
 <p>If all goes well we should get an HTTP response code of 200 with a message body that looks like this:</p>
-<pre><code>{
-  &quot;access_token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYW5keSIsImV4cCI6MTc1ODQ1MDA1MX0.i3uSNpI84oPJoH7o72gopAuSgsxKCQvA36dj_dj6Nt0&quot;,
-  &quot;token_type&quot;: &quot;bearer&quot;
-}
-</code></pre>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"access_token"</span><span class="token operator">:</span> <span class="token string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYW5keSIsImV4cCI6MTc1ODQ1MDA1MX0.i3uSNpI84oPJoH7o72gopAuSgsxKCQvA36dj_dj6Nt0"</span><span class="token punctuation">,</span>
+  <span class="token property">"token_type"</span><span class="token operator">:</span> <span class="token string">"bearer"</span>
+<span class="token punctuation">}</span></code></pre>
 <p>At this point in the flow we know that we only get valid http response codes. <code>access_token</code> is the part we are interested in saving to the <em>tenant variables</em>, so I set this on a header using JsonPath. JsonPath lets you extract specific values from JSON responses. In this case I can get the access token with: <code>$.access_token</code>.</p>
 <p>But sometimes a valid http status does not necessarily mean that the body is exactly how we want it to be. And I surely do not want to save an empty or invalid value to my variables. To catch these kind of differences I added a header to calculate the length of the token. This time using a <a href="https://camel.apache.org/components/4.14.x/languages/simple-language.html">simple expression</a>: <code>${header.access-token?.length()}</code>. Simple is a language shipped with Apache Camel that prevents scripting for simpler use cases.</p>
-<p>Next I added a content router that checks if the length of the <code>access-token-length</code> header is greater than 0. If so, it will proceed and save the value to the <em>tenant variables</em>. Note in the images that I have added the <code>Bearer </code> to the variable. This makes it easier using the value further down the line directly on a <code>Authorization</code> header. If not, it stops at a log component. In my example this situation is not handled any further, but this route could for example send a notification or perform some custom handling according to what the business users want to know.
-[get-token-7-content-router.png, get-token-8-set-tenant-var.png]</p>
+<p>Next I added a content router that checks if the length of the <code>access-token-length</code> header is greater than 0. If so, it will proceed and save the value to the <em>tenant variables</em>. Note in the images that I have added the <code>Bearer </code> to the variable. This makes it easier using the value further down the line directly on a <code>Authorization</code> header. If not, it stops at a log component. In my example this situation is not handled any further, but this route could for example send a notification or perform some custom handling according to what the business users want to know.</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-getTokenDetails" style="grid-template-columns: repeat(2, 1fr);">                        <a href="/img/QMJHajof8N-1006.jpeg" data-pswp-width="1006" data-pswp-height="540" target="_blank" style="text-decoration: none">          <img src="/img/QMJHajof8N-400.jpeg" alt="ContentRouter">        </a>            <a href="/img/CPDa__P7Tg-606.jpeg" data-pswp-width="606" data-pswp-height="639" target="_blank" style="text-decoration: none">          <img src="/img/CPDa__P7Tg-400.jpeg" alt="SetTenantVars.">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-getTokenDetails',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
 <h3>Installing and checking the authentication flow</h3>
 <p>From the flow designer the play icon on the right will let users install a flow in that environment immediately. Once started, the environment will colour green. To check if the flow runs as it should I can quickly navigate to the flow details via the folder icon next to the stop icon.</p>
 <p>[get-token-9-installed.png]</p>
@@ -202,8 +208,7 @@ Since auth is working, we can now start building the TMS shipment to Broker orde
 <h3>Building the TMS shipment to Broker order flow</h3>
 <p>As mentioned earlier, we want to process new shipments on a schedule. But before we dive into creating the flow, we need to make sure that there are new shipments in the sandbox.</p>
 <p>We can seed a number of shipments by sending an <em>authenticated HTTP POST request</em> to <code>#{base_url}/api/v1/tms/shipments/seed</code> with the following body:</p>
-<pre><code class="language-json">{&quot;count&quot;: 100}
-</code></pre>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><span class="token property">"count"</span><span class="token operator">:</span> <span class="token number">100</span><span class="token punctuation">}</span></code></pre>
 <p>For tasks like these and creating proof of concepts in general, I like to use <a href="https://www.postman.com/">Postman</a> as my HTTP client. If you're a Postman user then you're in luck, I have exported my collection for <a href="/assets/examples/Sandbox.postman_collection.json">anyone to use</a>. It uses a couple of environment variables and has a small utility script that stores the result of the <code>/token</code> call into the variables, which prevents me from copying and pasting the Bearer token every 15min.</p>
 <p>I gave the flow a clear and descriptive name that matches the process: <em>new tms shipment to broker order</em>. For this process I don't have a real business requirement for the time schedule so I decided to go with 5 minutes. The scheduler will trigger the flow as soon as it is installed.</p>
 <p>[shipment-to-broker-1-overview.png ,]</p>
@@ -236,75 +241,68 @@ This means for this use case that we'll introduce some format conversion overhea
 <details name="json2xml">
   <summary><b>Why? Click here for a detailed explanation!</b></summary><p>
 </p><p>Take for example the JsonToXMLSimple component with the following input:</p>
-<pre><code class="language-json">{
-    &quot;id&quot;: 1,
-    &quot;name&quot;: &quot;Example&quot;,
-    &quot;list&quot;: [
-        &quot;a&quot;,
-        &quot;b&quot;,
-        &quot;c&quot;
-    ]
-}
-</code></pre>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Example"</span><span class="token punctuation">,</span>
+    <span class="token property">"list"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token string">"a"</span><span class="token punctuation">,</span>
+        <span class="token string">"b"</span><span class="token punctuation">,</span>
+        <span class="token string">"c"</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span></code></pre>
 <p>This will result in:</p>
-<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;root&gt;
-    &lt;name&gt;Example&lt;/name&gt;
-    &lt;id&gt;1&lt;/id&gt;
-    &lt;list&gt;a&lt;/list&gt;
-    &lt;list&gt;b&lt;/list&gt;
-    &lt;list&gt;c&lt;/list&gt;
-&lt;/root&gt;
-</code></pre>
+<pre class="language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>root</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span><span class="token punctuation">></span></span>Example<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>id</span><span class="token punctuation">></span></span>1<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>id</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span><span class="token punctuation">></span></span>a<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span><span class="token punctuation">></span></span>b<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span><span class="token punctuation">></span></span>c<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>root</span><span class="token punctuation">></span></span></code></pre>
 <p>Converting this XML back to JSON, there are a couple of gotchas:</p>
-<pre><code class="language-json">{
-    &quot;name&quot;: &quot;Example&quot;,
-    &quot;id&quot;: &quot;1&quot;,
-    &quot;list&quot;: [
-        &quot;a&quot;,
-        &quot;b&quot;,
-        &quot;c&quot;
-    ]
-}
-</code></pre>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Example"</span><span class="token punctuation">,</span>
+    <span class="token property">"id"</span><span class="token operator">:</span> <span class="token string">"1"</span><span class="token punctuation">,</span>
+    <span class="token property">"list"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token string">"a"</span><span class="token punctuation">,</span>
+        <span class="token string">"b"</span><span class="token punctuation">,</span>
+        <span class="token string">"c"</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span></code></pre>
 <p>We can see that id has now lost its integer type.</p>
 <p>Let's use the same example, modified slightly to have only a single item in the array:</p>
-<pre><code class="language-JSON">{
-    &quot;name&quot;: &quot;Example&quot;,
-    &quot;id&quot;: &quot;1&quot;,
-    &quot;list&quot;: &quot;a&quot;
-}
-</code></pre>
+<pre class="language-JSON"><code class="language-JSON">{
+    "name": "Example",
+    "id": "1",
+    "list": "a"
+}</code></pre>
 <p>The array in list has disappeared! This is because the XML without types has no context of what type the element had before conversion.</p>
 <p>Let's have a look at the JsonToXml which preserves types:
 JsonToXml (using the modified input)</p>
-<pre><code class="language-JSON">{
-    &quot;id&quot;: 1,
-    &quot;name&quot;: &quot;Example&quot;,
-    &quot;list&quot;: [
-        &quot;a&quot;
+<pre class="language-JSON"><code class="language-JSON">{
+    "id": 1,
+    "name": "Example",
+    "list": [
+        "a"
     ]
-}
-</code></pre>
+}</code></pre>
 <p>XML result</p>
-<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;root&gt;
-    &lt;id type=&quot;number&quot;&gt;1&lt;/id&gt;
-    &lt;name type=&quot;string&quot;&gt;Example&lt;/name&gt;
-    &lt;list class=&quot;array&quot;&gt;
-        &lt;element type=&quot;string&quot;&gt;a&lt;/element&gt;
-    &lt;/list&gt;
-&lt;/root&gt;
-</code></pre>
+<pre class="language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>root</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>id</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>number<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>1<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>id</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>name</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>Example<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>name</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>list</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>array<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>element</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>a<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>element</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>list</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>root</span><span class="token punctuation">></span></span></code></pre>
 <p>With types enabled, the result still has the array and the integer type of id is preserved:</p>
-<pre><code class="language-json">{
-    &quot;id&quot;: 1,
-    &quot;name&quot;: &quot;Example&quot;,
-    &quot;list&quot;: [
-        &quot;a&quot;
-    ]
-}
-</code></pre>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+    <span class="token property">"id"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Example"</span><span class="token punctuation">,</span>
+    <span class="token property">"list"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token string">"a"</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span></code></pre>
 <p></p>
 </details>
 <p>After converting the JSON to XML, I set the <em>shipmentId</em> on a header for later use with an XPath expression: <code>/shipment/id/text()</code>. Next is the XSLT component where I add my mapping that I created with MapForce. I have uploaded my <a href="/assets/xslt/fluxygen-shipment-to-broker-order.xslt">shipment mapping</a> and <a href="/assets/xslt/fluxygen-broker-to-shipment-event.xslt">event mapping</a> for anyone to use.</p>
@@ -352,22 +350,21 @@ JsonToXml (using the modified input)</p>
 </ul>
 <p>Next, I have added a <em>XmlToJson</em> component with type hints set to true. This creates a perfect JSON for our API which is then sent to the <code>#{base_url}/api/v1/broker/order</code> endpoint with the <em>HTTP</em> component. This time I set the <em>Use error route?</em> option to false. This means that all HTTP response codes will be handled by the flow itself and not the dedicated error flow.</p>
 <p>As I mentioned earlier, the result of this sub-process gets aggregated and sent back to the main flow. If I end this sub-process with the result of the API, then the main process will continue with a list of raw API responses (either shipments or error messages). To give the output a uniform structure, I like to add a custom response based on the API result. This makes the aggregated result easier to process:</p>
-<pre><code class="language-json">[
-	{
-		&quot;shipmentId&quot;: 1,
-		&quot;result&quot;:&quot;OK&quot;
-	},
-	{
-		&quot;shipmentId&quot;: 2,
-		&quot;result&quot;: &quot;ERROR&quot;,
-		&quot;details&quot;: &quot;detailed error message here.&quot;
-	},
-	{
-		&quot;shipmentId&quot;: 3,
-		&quot;result&quot;:&quot;OK&quot;
-	}
-]
-</code></pre>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">[</span>
+	<span class="token punctuation">{</span>
+		<span class="token property">"shipmentId"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+		<span class="token property">"result"</span><span class="token operator">:</span><span class="token string">"OK"</span>
+	<span class="token punctuation">}</span><span class="token punctuation">,</span>
+	<span class="token punctuation">{</span>
+		<span class="token property">"shipmentId"</span><span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+		<span class="token property">"result"</span><span class="token operator">:</span> <span class="token string">"ERROR"</span><span class="token punctuation">,</span>
+		<span class="token property">"details"</span><span class="token operator">:</span> <span class="token string">"detailed error message here."</span>
+	<span class="token punctuation">}</span><span class="token punctuation">,</span>
+	<span class="token punctuation">{</span>
+		<span class="token property">"shipmentId"</span><span class="token operator">:</span> <span class="token number">3</span><span class="token punctuation">,</span>
+		<span class="token property">"result"</span><span class="token operator">:</span><span class="token string">"OK"</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">]</span></code></pre>
 <p>This is done by adding a <em>content router</em> after the <em>HTTP</em> component. Since I know that the API will return a HTTP 202 on success, I have added the following rule to the content router:
 <code>${header.CamelHttpResponseCode} == 202</code>. This routes all successful responses to a dedicated branch. I then set the body of that branch to:</p>
 <pre><code>{

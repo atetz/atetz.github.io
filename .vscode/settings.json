@@ -13,5 +13,6 @@
         "latex",
         "plaintext",
         "markdown"
-    ]
+    ],
+    "djlint.showInstallError": false
 }

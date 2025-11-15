@@ -9,7 +9,10 @@
     "@11ty/eleventy": "^3.0.0",
     "@11ty/eleventy-img": "^6.0.4",
     "@11ty/eleventy-navigation": "^1.0.4",
-    "@quasibit/eleventy-plugin-sitemap": "^2.2.0"
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
+    "@quasibit/eleventy-plugin-sitemap": "^2.2.0",
+    "mermaid": "^11.12.1",
+    "photoswipe": "^5.4.4"
   },
   "scripts": {
     "build-ghpages": "npx @11ty/eleventy --pathprefix=/atetz.github.io/"

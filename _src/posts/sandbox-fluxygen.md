@@ -94,7 +94,13 @@ Primarily there are 4 screens that users can work with:
 2. Flow designer - The place where flows are created.
 3. Tenant manager - Lets admins manage users and global settings.
 4. Tenant variables - Create, update and delete global variables.
-[fluxygen-homescreen.png]
+
+
+{% gallery "Homescreen" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/fluxygen-homescreen.png", "Fluxygen homescreen", 500 %}
+{% endgallery %}
+
+
 Integrations in Fluxygen enable messages to flow from point A to point B. This is done by creating flows where users can manage the flow of messages and how they are processed. Processing is orchestrated by adding the right components in the right order. 
 
 Messages have the following structure (just like HTTP messages):
@@ -112,15 +118,23 @@ As mentioned earlier, the sandbox's APIs requires users to authenticate using OA
 
 Since I want to use the access token from multiple flows, I created a new flow called "get token" that retrieves a new token and stores it in the *tenant variables*. Fluxygen lets you install test and production versions of your flows, and each environment can have their own set of flow properties. Because I wanted the API URL, username, and password to be configurable for different environments, I set them up as flow properties instead of hardcoding them. I also set the tracing of the flow to 1 day. This means that I can view a detailed log of the transactions and that this information is kept for 1 day.
 
-[get-token-1-overview.png, get-token-2-flow-properties.png]
--- note this will be Photoswipe
+
+{% gallery "getTokenOverview" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-1-overview.png", "Overview of get token flow.", 500 %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-2-flow-properties.png", "Flow properties.", 500 %}
+{% endgallery %}
 
 I chose to schedule the flow for 10 minutes since this will give me 5 minutes to fix any possible issues. After I set the Content-Type and Accept headers, I set the message body to: `username=#{username}&password=#{password}`. Where the `#{variables}` refer to the flow properties. These are added via the blue # sign. The body is then sent to the sandbox's token URL via a HTTP POST using the HTTP component. I enabled *Use error route?* which means that once the HTTP component returns a response code outside of the 200-300 range, It will trigger the error route. 
 
-[get-token-3-scheduler.png, get-token-4-setheaders.png, get-token-5-setBody.png, get-token-6-http.png]
+{% gallery "getTokenDetails" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-3-scheduler.png", "Scheduler details.", 400 %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-4-setheaders.png", "SetHeaders.", 400 %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-5-setBody.png", "SetBody.", 400 %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-4-setheaders.png", "SetHeaders.", 400 %}
+{% endgallery %}
 
 If all goes well we should get an HTTP response code of 200 with a message body that looks like this:
-```
+```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYW5keSIsImV4cCI6MTc1ODQ1MDA1MX0.i3uSNpI84oPJoH7o72gopAuSgsxKCQvA36dj_dj6Nt0",
   "token_type": "bearer"
@@ -132,7 +146,13 @@ At this point in the flow we know that we only get valid http response codes. `a
 But sometimes a valid http status does not necessarily mean that the body is exactly how we want it to be. And I surely do not want to save an empty or invalid value to my variables. To catch these kind of differences I added a header to calculate the length of the token. This time using a [simple expression](https://camel.apache.org/components/4.14.x/languages/simple-language.html): `${header.access-token?.length()}`. Simple is a language shipped with Apache Camel that prevents scripting for simpler use cases. 
 
 Next I added a content router that checks if the length of the `access-token-length` header is greater than 0. If so, it will proceed and save the value to the *tenant variables*. Note in the images that I have added the `Bearer ` to the variable. This makes it easier using the value further down the line directly on a `Authorization` header. If not, it stops at a log component. In my example this situation is not handled any further, but this route could for example send a notification or perform some custom handling according to what the business users want to know.
-[get-token-7-content-router.png, get-token-8-set-tenant-var.png]
+
+{% gallery "getTokenDetails" %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-7-content-router.png", "ContentRouter", 400 %}
+{% galleryImg "/assets/images/fluxygen-sandbox/get-token-8-set-tenant-var.png", "SetTenantVars.", 400 %}
+{% endgallery %}
+
+
 ### Installing and checking the authentication flow
 From the flow designer the play icon on the right will let users install a flow in that environment immediately. Once started, the environment will colour green. To check if the flow runs as it should I can quickly navigate to the flow details via the folder icon next to the stop icon. 
 
