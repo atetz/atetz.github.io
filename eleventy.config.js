@@ -108,6 +108,12 @@ export default function (eleventyConfig) {
   });
   eleventyConfig.setInputDirectory("_src");
   eleventyConfig.addPassthroughCopy("_src/assets");
+  eleventyConfig.addPassthroughCopy({
+    "_src/assets/favicons/favicon-96x96.png": "/favicon-96x96.png",
+    "_src/assets/favicons/favicon.svg": "/favicon.svg",
+    "_src/assets/favicons/favicon.ico": "/favicon.ico",
+    "_src/assets/favicons/apple-touch-icon.png": "/apple-touch-icon.png",
+  });
   eleventyConfig.addPlugin(eleventyNavigationPlugin);
   eleventyConfig.addPlugin(eleventyImageTransformPlugin);
   eleventyConfig.addPlugin(sitemap, {
