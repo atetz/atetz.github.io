@@ -91,3 +91,4 @@ Thumbs.db
 
 *.obsidian*
 _site/
+_site/*
