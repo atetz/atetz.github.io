@@ -3,9 +3,9 @@ title: Testing the integration sandbox with Fluxygen
 date: 2025-11-16
 ---
 ## Intro
-Recently I wrote about the [integration sandbox](https://github.com/atetz/integration-sandbox) I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: [Fluxygen](https://fluxygen.com/). I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.
+Recently I wrote about the [integration sandbox](https://github.com/atetz/integration-sandbox) I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I want to see how it works with a platform I know well: [Fluxygen](https://fluxygen.com/). I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.
 
-Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without the need for software developers. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability. 
+Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without writing code. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability. 
 
 At the same time, integration architecture still requires thinking through data flows, error handling, and business logic. The platform gives you the tools, but doesn't do the thinking for you.
 
@@ -16,6 +16,7 @@ Let's see how it all comes together in Fluxygen!
 There are two processes in the sandbox that I want to integrate:
 - TMS shipment to Broker order
 - Broker event to TMS event
+  
 As mentioned in the docs, the APIs are secured. We'll handle this globally for both the processes. Let's have a look at an overview of the processes that we're going to integrate:
 #### Authentication
 The sandbox's APIs are secured by *Simple OAuth2 with Password and Bearer* authentication that provides a JWT (JSON Web Token). These tokens expire every 15 minutes, so we'll need to create a process that refreshes these tokens automatically and enables the other processes to run without manual intervention. 
@@ -424,6 +425,6 @@ At the end I showed an example of a flow that can receive events. Here I explain
 - Authentication
 
 ### What's next? 
-In the next weeksI'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) and [n8n](https://n8n.io).
+In the next weeks I'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) and [n8n](https://n8n.io).
 
 What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/), experiences, or even just a quick hello!
