@@ -66,8 +66,8 @@
     <p>November 16, 2025</p>
 </hgroup>
   <h2>Intro</h2>
-<p>Recently I wrote about the <a href="https://github.com/atetz/integration-sandbox">integration sandbox</a> I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I wanted to see how it works with a platform I know well: <a href="https://fluxygen.com/">Fluxygen</a>. I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.</p>
-<p>Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without the need for software developers. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability.</p>
+<p>Recently I wrote about the <a href="https://github.com/atetz/integration-sandbox">integration sandbox</a> I built that enables me to test and evaluate an integration use case in the transport and logistics domain without actually having to deal with setting up real systems. With the sandbox ready, I want to see how it works with a platform I know well: <a href="https://fluxygen.com/">Fluxygen</a>. I've used it professionally for e-commerce, finance, transport and logistics, and manufacturing projects.</p>
+<p>Fluxygen is an opinionated, low-code Integration platform as a service (iPaaS). Opinionated means they abstract a lot of the technical details away. It's designed for organisations looking to develop integrations through an intuitive UI without writing code. This enables tech-savvy domain experts to build integrations themselves and lets organisations focus on the business logic that makes their processes special. Having worked with the platform for multiple years, I can definitely say that they deliver on usability.</p>
 <p>At the same time, integration architecture still requires thinking through data flows, error handling, and business logic. The platform gives you the tools, but doesn't do the thinking for you.</p>
 <p>Under the hood, Fluxygen is built on <a href="https://camel.apache.org/">Apache Camel</a>, the open source integration framework that implements the <em><a href="https://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</a></em>. Fluxygen uses these patterns throughout their UI and therefore naturally teaches you a universal integration vocabulary.</p>
 <p>Let's see how it all comes together in Fluxygen!</p>
@@ -75,9 +75,9 @@
 <p>There are two processes in the sandbox that I want to integrate:</p>
 <ul>
 <li>TMS shipment to Broker order</li>
-<li>Broker event to TMS event
-As mentioned in the docs, the APIs are secured. We'll handle this globally for both the processes. Let's have a look at an overview of the processes that we're going to integrate:</li>
+<li>Broker event to TMS event</li>
 </ul>
+<p>As mentioned in the docs, the APIs are secured. We'll handle this globally for both the processes. Let's have a look at an overview of the processes that we're going to integrate:</p>
 <h4>Authentication</h4>
 <p>The sandbox's APIs are secured by <em>Simple OAuth2 with Password and Bearer</em> authentication that provides a JWT (JSON Web Token). These tokens expire every 15 minutes, so we'll need to create a process that refreshes these tokens automatically and enables the other processes to run without manual intervention.</p>
 <pre class="mermaid">
@@ -411,7 +411,7 @@ JsonToXml (using the modified input)</p>
 <li>Authentication</li>
 </ul>
 <h3>What's next?</h3>
-<p>In the next weeksI'm going to test the sandbox with <a href="https://azure.microsoft.com/en-us/products/logic-apps/">Azure Logic Apps</a> and <a href="https://n8n.io">n8n</a>.</p>
+<p>In the next weeks I'm going to test the sandbox with <a href="https://azure.microsoft.com/en-us/products/logic-apps/">Azure Logic Apps</a> and <a href="https://n8n.io">n8n</a>.</p>
 <p>What do you think of this kind of content? I'd love to <a href="https://data-integration.dev/contact/">hear your thoughts</a>, experiences, or even just a quick hello!</p>
 
     </section>
