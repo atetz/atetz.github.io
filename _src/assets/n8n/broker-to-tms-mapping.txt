@@ -1,0 +1,35 @@
+{"event": {
+    "created_at": "{{$json.situation.registrationDate}}",
+    "event_type": {{ (() => {
+
+  const eventMapping = {
+    "ORDER_CREATED":"BOOKED",
+    "DRIVING_TO_LOAD":"DISPATCHED",
+    "ORDER_LOADED":"PICKED_UP",
+    "ETA_EVENT":"ETA_CHANGED",
+    "ORDER_DELIVERED":"DELIVERED",
+    "CANCEL_ORDER":"CANCELLED",
+  }
+
+  return eventMapping[$json.situation.event].toJsonString()
+})() }},
+    "occured_at": "{{ $json.situation.actualDate}}",
+    "external_order_reference": "{{ $json.order.reference }}",
+    "source": "broker",
+    "location": {{ (() => {
+
+if ($json.situation.position == null){
+return null
+} else {
+
+const location = {
+      "code": $json.situation.position.locationReference,
+      "latitude": $json.situation.position.latitude,
+      "longitude": $json.situation.position.longitude
+      }
+return location.toJsonString()
+}
+})() }}
+},
+"shipment_id": "{{ $json.shipmentId }}"
+}

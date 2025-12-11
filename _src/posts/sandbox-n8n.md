@@ -123,7 +123,9 @@ During my exploration of n8n I found the official [docs](https://docs.n8n.io/vid
 
 On the homescreen users are greeted with 5 main options (depending on the version / license):
 
-02-n8n-1-homescreen.png
+{% gallery "Homescreen" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-1-homescreen.png", "n8n homescreen", 500 %}
+{% endgallery %}
 
 1. Workflows - an overview of the workflows. Workflows are the heart of n8n it's the place where users orchestrate the nodes that are necessary to automate a process;
 2. Credentials - used for creating, managing, and sharing credentials;
@@ -134,7 +136,17 @@ On the homescreen users are greeted with 5 main options (depending on the versio
 There are also some less visually prominent options that take you to the admin panel, let you use templates (predefined workflows), open the help page or let you view insights.
 
 **Data structure and flow**
-Each node receives and processes data in json format. N8n uses the following example in their docs:
+Each node receives and processes data in an array of json objects. The output of the first node is the input of the second node and so on. Except the first node that serves as a trigger node,  like a scheduler or webhook. This node only produces an output based on the trigger settings.
+
+By default nodes wil process an array of multiple items for each item. So for example if the node receives an array of multiple shipments to work with:
+
+```json
+[{ "shipment": 1 }, { "shipment": 2 }, { "shipment": 3 }]
+```
+
+The node will be executed per shipment. There are some exceptions to this rule depending on the node or configuration.
+
+Even for non json data, the object that is passed is wrapped in json. To illustrate this n8n uses the following example in their docs:
 
 ```json
 [
@@ -163,50 +175,65 @@ Each node receives and processes data in json format. N8n uses the following exa
 ]
 ```
 <small>source: https://docs.n8n.io/data/data-structure/ </small>
-The output of the first node is the input of the second node and so on. Except of course the first node, also known as a trigger node. This node only produces an output based on the trigger settings like a scheduler or webhook. 
 ### Setting up authentication and working with OAuth challenges
 At the start of my test I quickly found out that my sandbox's OAuth *password grant* is not supported. There were only options for Authorization Code, Client Credentials or PKCE. 
 
-Since I implemented the basic OAuth 2 from the FastAPI documentation I wondered why. After doing some digging in the community resources I found the answer on discord: *"The password grant type is legacy and not part of OAuth 2.1 which is what we support"*.
+Since I implemented the basic OAuth 2 from the FastAPI documentation I wondered why. After doing some digging in the community resources I found the answer on their discord: *"The password grant type is legacy and not part of OAuth 2.1 which is what we support"*.
 
 Ah too bad! But how hard can it be to implement this myself? I have done it before!
 The easiest way to implement this is by refreshing the JWT on a schedule. Which means that I only need a place to *store and update* my JWT. Also I thought, going this route introduced two more challenges:
 - The pro trial I signed up for is limited to 1000 executions. If I want to refresh my JWT on a 10-15 min schedule then I would use up ~100-150 executions a day for just refreshing my credentials!
 - I didn't really find an out of the box option to update a variable that is accessible from another flow. 
 
-The pro variable feature only let's users update the variable data from outside the workflow. I had to either use a community node, data tables, database or some other external source like a key value store. Another option I found was that I could build a *sub* workflow that checks and refreshes the token with the help of the [workflowStaticData](https://docs.n8n.io/code/cookbook/builtin/get-workflow-static-data/) feature. I could then use this sub flow every time before a post to my sandbox. 
+The pro variable feature only let's users edit the variable data from outside the workflow. I had to either use a community node, data tables, database or some other external source like a key value store. Another option I found was that I could build a *sub* workflow that checks and refreshes the token with the help of the [workflowStaticData](https://docs.n8n.io/code/cookbook/builtin/get-workflow-static-data/) feature. I could then use this sub flow every time before a post to my sandbox. 
 
-[01-sandbox-docs-1.png]
+{% gallery "Sandbox docs" %}
+{% galleryImg "/assets/images/n8n-sandbox/01-sandbox-docs-1.png", "sandbox docs", 500 %}
+{% endgallery %}
 
-None of those options sounded appealing to me so I decided to upgrade my sandbox and make it compatible with the OAuth 2.1 client credentials grant. Which boiled down to adding alias field names for *username* and *password*. Namely *client_id* and *client_secret*. And adding support for getting the token with *Basic Authentication* in addition to the *x-www-form-urlencoded*. This is by no means a great implementation of OAuth, but for testing purposes it gets the job done and lets us use the builtin functionality. 
 
-With the new functionality in the sandbox, setting up the authentication was very easy. I created an *OAuth2 API* credential and filled in the form:
-[02-n8n-2-credential-token.png]
+All of those options sounded a bit over-engineered to me for something so simple as storing rotating credentials. So I decided to upgrade my sandbox and make it compatible with the OAuth 2.1 client credentials grant. Which boiled down to adding alias field names for *username* and *password*. Namely *client_id* and *client_secret*. And adding support for getting the token with *Basic Authentication* in addition to the *x-www-form-urlencoded*. This is by no means a great implementation of OAuth, but for testing purposes it gets the job done and lets us use the builtin functionality. 
 
-I also added the X-API-KEY as a *Header Auth* credential that is used to secure the incoming connections:
-[02-n8n-3-credential-api-key.png]
-### Building the TMS shipment to Broker order flow
+With the new functionality in the sandbox, setting up the authentication was very easy. I created an *OAuth2 API* credential and filled in the form. I also added the X-API-KEY as a *Header Auth* credential that is used to secure the incoming connections
+
+{% gallery "Auth" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-2-credential-token.png", "credential token", 500 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-3-credential-api-key.png", "credential api key", 500 %}
+{% endgallery %}
+
+### Building the TMS shipment to Broker order workflow
 After seeding 100 new shipments in the sandbox, I created a workflow called *new tms shipment to broker order*. 
 
-[01-sandbox-docs-seed.png,02-n8n-shipment-to-broker-overview.png]
+{% gallery "Seed" %}
+{% galleryImg "/assets/images/n8n-sandbox/01-sandbox-docs-seed.png", "sandbox seed", 500 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-4-shipment-to-broker-overview.png", "overview TMS to broker", 500 %}
+{% endgallery %}
 
 The workflow starts with a *When clicking 'Execute workflow'* trigger. Which means that the workflow will trigger as soon as the *Execute workflow* button is pressed. This is an ideal way to develop and test the workflow quickly. 
 
-[02-n8n-5-shipment-to-broker-http.png]
+Next I added a *HTTP Request node* that will get the new shipments from the API. The details of a node open a screen showing the input and output that passes through which gives a clear image of what's going on with the data. There's also a *Execute step* button that will populate the input and output if there's cached data available. I like this idea a lot!
 
-Next I added a *HTTP Request node* that will get the new shipments from the API. The settings of a node open a screen showing the input and output that passes through. Giving a clear image of what's going on with the data. There's also a *Execute step* button that will populate the input and output if there's cached data available. I like this idea a lot!
+{% gallery "TMS2BRHttp" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-5-shipment-to-broker-http.png", "HTTP", 500 %}
+{% endgallery %}
 
-In the above image I've set the method, URL and authentication. Because I setup the OAuth credentials, the authentication details were already available in the dropdown menu. I also added a query parameter *limit* with the value of *10* that let's me only process 10 shipments per each test. 
+In the above image I've set the method, URL and authentication. The authentication details were already available in the dropdown menu because I setup the OAuth credentials. I also added a query parameter *limit* with the value of *10* that let's me only process 10 shipments per each test. Which means I can test 10 times before seeding new shipments. 
 
-[02-n8n-6-shipment-to-broker-filter.png]
+{% gallery "TMS2BRfilter" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-6-shipment-to-broker-filter.png", "Filter", 500 %}
+{% endgallery %}
 
-After the *HTTP Request node* I added a *Filter node* and set a condition that checks if {% raw %} `{{ $json.id }}` {% endraw %} exists. Meaning that if there is no *id* field in the input then the flows does not continue.
+After the *HTTP Request node* I added a *Filter node* and set a condition that checks if {% raw %} `{{ $json.id }}` {% endraw %} exists. This prevents the workflow from processing an empty list of items by checking if there is an *id* field in the input. If the array is empty, the first item won't have an ID and stop the flow.
 
-**Data mapping**
-
+#### Data mapping
 The next node is *Edit Fields*. This node is used to define the data mapping from the TMS to the broker payload. And this is where things start to get really interesting. 
 
-[02-n8n-7-shipment-to-broker-editfields.png, 02-n8n-8-shipment-to-broker-editfields-manmapping.png, 02-n8n-9-shipment-to-broker-editfields-jsmapping.png]
+{% gallery "TMS2BREditFields" 3 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-7-shipment-to-broker-editfields.png", "edit fields", 500 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-8-shipment-to-broker-editfields-manmapping.png", "manual mapping", 500 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-9-shipment-to-broker-editfields-jsmapping.png", "javascript mapping", 500 %}
+{% endgallery %}
+
 The settings of this node has two main modes: 
 - Manual mapping
 - JSON
@@ -215,7 +242,7 @@ The **manual mapping** mode lets users build up the output message structure wit
 
 The **JSON** mode gives users a similar experience to a templating engine where the payload can be defined in plain text in combination with expressions.
 
-I chose to go the JSON mode route because there is an example of the expected output available in the [mapping requirements](https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md), which meant I could paste in the json and build out the mapping by templating and testing each field immediately. The requirements also determine a rule for un-nesting aggregated line_items to individual handlingUnits. To get this working I wrote a JavaScript expression that returns the custom array. I shamelessly admit that I switched to a small project in VSCode to write and debug this part.
+I chose to go the JSON mode route because there is an example of the expected output available in the [mapping requirements](https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md), which meant I could paste in the json and build out the mapping by templating and testing each field immediately. The requirements also determine a rule for *un-nesting aggregated line_items to individual handlingUnits.* To get this working I wrote a JavaScript expression that returns the custom array. I shamelessly admit that I switched to a small project in VSCode to write and debug this part.
 
 The end result of the data mapping does the following: 
 - **Generate message metadata**
@@ -288,40 +315,112 @@ Number(
 {% endraw %}
 All other fields were mapped using *dot notation*.
 
-The [end result](/assets/n8n/tms-to-broker-mapping.txt) turned out to be quite unreadable at first sight. But, it works and debugging is fairly easy in the expression editor. At the same time I can imagine that when you are working in a team with multiple people, there must be some guidelines in place to make these kinds of mappings manageable. In hindsight, it might have been more readable from the UI if I had defined the mappings per field in the **manual mapping** mode.
+The [end result](/assets/n8n/tms-to-broker-mapping.txt) turned out to be quite unreadable at first sight. But it works and debugging is fairly easy in the expression editor. At the same time I can imagine that when you are working in a team with multiple people, there must be some guidelines in place to make these kinds of mappings manageable. In hindsight, it might have been more readable if I had defined the mappings per field in the **manual mapping** mode.
 
-The last node in the workflow is a *HTTP Request node* which sends the newly transformed payload to the broker/order endpoint. 
-[02-n8n-10-shipment-to-broker-editfields-post.png]
+The last node in the workflow is a *HTTP Request node* which sends the newly transformed payload to the broker/order endpoint. Because I want the node to send a request per order I set the batching to *1 items per batch* with an interval of *500ms*.
 
-Because I want the node to send a request per order I set the batching to *1 items per batch* with an interval of *500ms*.
-### Building the Broker event to TMS event flow
+{% gallery "TMS2BRHTTPRequest" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-10-shipment-to-broker-post.png", "HTTP request", 500 %}
+{% endgallery %}
+
+Et voila! After building and testing the data mapping, executing the workflow results in 10 processed shipments that are validated by the sandbox!
 
 
-{% raw %}
-Data mapping notes
-- javascript needed to create/duplicate handlingunits items per quantity
-	- IIFE (Immediately Invoked Function Expression).
-	- Used a small project in vscode to write and debug my function.
-- Used $jmespath to get values with a filter. it returns an array `{{ $jmespath($json.stops,"[?type=='PICKUP'].location.address.country | [0]") }}`
-- Used reduce javascript for sum of grossweight
-{% endraw %}
+{% gallery "TMS2BROverview" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-11-shipment-to-broker-result.png", "Result", 800 %}
+{% endgallery %}
 
-Event:
-- Split out needed before the Edit fields node. 
-- If you want the output to be an array, you should not use the Set node in "raw" mode with "JSON Output", because this mode only accepts a JSON object, not an array. This is a limitation of the Set node in raw mode.
+### Building the broker event to TMS event workflow
+For processing the incoming broker events for the TMS I built the following workflow:
+
+{% gallery "BR2TMSResult" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-12-event-overview.png", "Result", 800 %}
+{% endgallery %}
+
+<small> My trial expired during writing this article so I ended up running the workflows using docker. </small>
+
+The first node is a Webhook trigger named *Incoming events*. I configured it to accept the *POST* http method, set the Authentication to the *Header Auth with the X-API-KEY of the Sandbox* and to respond immediately with a HTTP 204.
+After clicking the *Listen for test event* button I sent a test message from the sandbox to the webhook URL: `http://n8n:5678/webhook-test/bad3681a-ff47-4b8b-9dcc-34795ee1067a`. 
+
+
+{% gallery "BR2TMSWebhook" 2 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-13-event-webhook.png", "Result", 500 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-14-event-testmessage.png", "Result", 500 %}
+{% endgallery %}
+
+Next up in the workflow is a filter node that prevents empty objects from passing through (just like in the shipments flow). Up until now the json that is passed through nodes is seen as 1 single webhook object which has seperate keys for the incoming headers, params, query and body. To grab the array of events from the incoming message body I added a *Split Out* and set it to the body field.
+
+{% gallery "BR2TMSSplit" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-15-event-split-out.png", "Split out", 500 %}
+{% endgallery %}
+
+Now that I have an array of events, I can start mapping the broker data to TMS data with an *Edit Fields* node. This mapping is a lot simpler and uses the same methods as in the shipment flow. Because the TMS event endpoint needs the shipmentId in the URL, I wrapped the event in an object that has the event data and the shipmentId. 
+
+Normally I would have stored this in a variable but I could not find a simple way to do this. There is also the option to acces the input of a previous node, which meant I could have accessed the data from before the mapping. But I prefer to work with the current state of the data and therefore added it. I made the end result available [here](/assets/n8n/broker-to-tms-mapping.txt).
+
+{% gallery "BR2TMSEditFields" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-16-event-editfields.png", "Set event payload", 500 %}
+{% endgallery %}
+
+Finally a *HTTP node* at the end sends the event to the TMS event API. The shipment id in the URL is set using dot notation  {% raw %}`http://sandbox:8000/api/v1/tms/event/{{ $json.shipment_id }}` and the json body is defined as `{{ $json.event.toJsonString() }}`{% endraw %} Using `toJsonString()` ensures that the object is correctly transformed to a string. Like JavaScript's `JSON.stringify`.
+
+{% gallery "BR2TMSPostEvent" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-17-event-post.png", "Event post", 500 %}
+{% endgallery %}
+
+After some testing the final result executed perfectly!
+
+{% gallery "BR2TMSResult" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-18-event-result.png", "Result", 1000 %}
+{% endgallery %}
+
+
+## Easy peasy! What about Error handling?
+Handling what should happen after the process has diverted from the *happy flow* is a very important aspect of integration. The business needs to be able to trust the automation and when things fail they need to be resolved quickly. Especially when automations grow complexer and handle more and more cases. This is a whole article worthy subject by itself so I wont dive into the details here, but I do have a small example for handling only certain HTTP status codes.
+
+Workflows can throw errors when something goes wrong in a node. Or users can add a *Stop and Error node* to manually throw an error. The most basic error handling like a retry, stop and fail or continue can be set on the node itself.
+
+{% gallery "EHNodeOptions" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-19-error-node-options.png", "EH Node options", 250 %}
+{% endgallery %}
+
+It's [recommended](https://docs.n8n.io/flow-logic/error-handling/) to build a dedicated *Error handling* workflow that can do something when an error is triggered. Like for example send a notification when a certain condition is met (without blasting too many notifications). Then from the settings of the main workflow point all errors to that specific *Error handling* workflow and your centralised error handling is configured. It's also good to know that Error workflow executions [are not counted](https://docs.n8n.io/insights/#which-executions-do-n8n-use-to-calculate-the-values-in-the-insights-banner-and-dashboard) as a prod execution.
+
+In some cases we want to handle an error differently. Let say we are sending data to our TMS API. Retrying *any* HTTP status error code will not be very efficient. If we for example get a HTTP status 422 (Unprocessable content) then a retry of the same content will just result in the same error over and over until the retry limit is reached. But a HTTP 429 (too many requests) for example might benefit from a delayed retry. Take a look at the example below:
+
+{% gallery "EHResult" %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-20-error-handling-429.png", "EH Result", 1000 %}
+{% endgallery %}
+
+
+The TMS Shipment to broker order flow has now been extended to handle HTTP 429 status codes differently:
+- The HTTP node *On Error* setting is set to *Continue (using error output)*.
+- The IF node checks *if the HTTP status is 429* AND *the runIndex is less than 3*. The runIndex is an [internal n8n counter](https://docs.n8n.io/code/builtin/n8n-metadata/) that tracks how many times n8n has executed the current node. So this works as a retry count of 3.
+- If True, the workflow goes on to a *Wait node* followed by a *Edit Fields node* that removes the error the data before going back to the *HTTP node* to try again.
+- If False, we aggregate the individual shipment errors into 1 message with all the relevant info. This is done by using an *Edit fields* node to set the data and an *Aggregate node* to collect all failed messages into 1. Last we throw the error with a *Stop and Error node*.
+- The *Stop and Error node* then sends the custom error message of to the *Error workflow.* 
+
+{% gallery "EHDetails" 4 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-21-error-handling-if.png", "EH IF", 150 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-22-error-handling-meta.png", "EH Meta", 150 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-23-error-handling-aggregate.png", "EH Aggregate", 150 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-24-error-handling-stop.png", "EH stop", 150 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-25-error-handling-remove-err-data.png", "EH remove data", 150 %}
+{% galleryImg "/assets/images/n8n-sandbox/02-n8n-26-error-handling-result.png", "EH result", 150 %}
+{% endgallery %}
 
 ## Wrapping up
-In this post I walked you through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox). Then I explained how to implement them in Fluxygen. First I built a scheduled flow that handled getting, transforming and sending new shipments. And I explained why and how I use each component. 
+In this post I walked you through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox). Then I explained how to implement them in n8n. First I built a flow that handled getting, transforming and sending new shipments. Then a flow that handles incoming events. All while explaining why and how I use each node along the way.
 
-At the end I showed an example of a flow that can receive events. Here I explained that most of the patterns used are similar. If you followed along, we've covered the basics of:
+If you followed along, we've covered the basics of:
+- Authentication
 - Scheduling / batch processing 
 - Receiving and sending messages via APIs/webhooks 
 - Data transformation and mapping
 - Conditional routing
 - Error handling
-- Authentication
 
 ### What's next? 
-In the next weeks I'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/). 
+In the next weeks I'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/). I also read that n8n is going to release a new version soon. So I might revisit this article in a little while! 
 
 What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/), experiences, or even just a quick hello!
