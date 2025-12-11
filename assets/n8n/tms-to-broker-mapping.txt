@@ -1,0 +1,106 @@
+{
+"meta": {
+  "messageDate":"{{DateTime.now().toISO() }}",
+  "messageFunction": 9,
+  "messageReference":"{{DateTime.now().toMillis()}}-{{ $json.id }}",
+  "senderId":"TMS"
+ },
+"shipment": {
+  "carrier":"{{ $json.customer.carrier }}",
+  "orders": [
+     {
+      "consignee": {
+        "address1":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.address.address | [0]") }}",
+        "city":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.address.city | [0]") }}",
+        "country":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.address.country | [0]") }}",
+        "dates": [
+           {
+            "dateTime":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].planned_date | [0]")
+                           +"T" 
+                           + $jmespath($json.stops,"[?type=='DELIVERY'].planned_time_window_start | [0]")
+                           +"Z"}}",
+            "qualifier":"PERIOD_EARLIEST"
+           },
+           {
+            "dateTime":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].planned_date | [0]")
+                         +"T" 
+                         + $jmespath($json.stops,"[?type=='DELIVERY'].planned_time_window_end | [0]")
+                         +"Z"}}",
+            "qualifier":"PERIOD_LATEST"
+           }
+         ],
+        "identification":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.code | [0]") }}",
+        "latitude": {{ $jmespath($json.stops,"[?type=='DELIVERY'].location.latitude | [0]") }},
+        "longitude": {{ $jmespath($json.stops,"[?type=='DELIVERY'].location.longitude | [0]") }},
+        "name":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.name | [0]") }}",
+        "postalCode":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.address.postal_code | [0]") }}"
+       },
+      "goodsDescription":"{{ $jmespath($json.line_items,"join('|',[*].description)") }}",
+      "handlingUnits": {{
+(() => {
+
+ const packageMapping = {
+  "BALE":"BL",
+  "BOX":"BX",
+  "COIL":"CL",
+  "CYLINDER":"CY",
+  "DRUM":"DR",
+  "OTHER":"OT",
+  "PLT":"PL",
+  "CRATE":"CR"
+ }
+
+ const result = [];
+ for (const item of $json.line_items) {
+   for (let i = 0; i < item.total_packages; i++) {
+     result.push({
+       grossWeight: item.package_weight,
+       height: item.height,
+       length: item.length,
+       width: item.width,
+       packagingQualifier: packageMapping[item.package_type]
+     });
+   }
+ }
+ return JSON.stringify(result,undefined, 6);
+})()
+       }},
+      "pickUp": {
+        "address1":"{{ $jmespath($json.stops,"[?type=='PICKUP'].location.address.address | [0]") }}",
+        "city":"{{ $jmespath($json.stops,"[?type=='PICKUP'].location.address.city | [0]") }}",
+        "country":"{{ $jmespath($json.stops,"[?type=='PICKUP'].location.address.country | [0]") }}",
+        "dates": [
+           {
+            "dateTime":"{{ $jmespath($json.stops,"[?type=='PICKUP'].planned_date | [0]")
+                           +"T" 
+                           + $jmespath($json.stops,"[?type=='PICKUP'].planned_time_window_start | [0]")
+                           +"Z"}}",
+            "qualifier":"PERIOD_EARLIEST"
+           },
+           {
+            "dateTime":"{{ 
+$jmespath($json.stops,"[?type=='PICKUP'].planned_date | [0]")
++"T" 
++ $jmespath($json.stops,"[?type=='PICKUP'].planned_time_window_end | [0]")
++"Z"
+}}",
+            "qualifier":"PERIOD_LATEST"
+           }
+         ],
+        "identification":"{{ $jmespath($json.stops,"[?type=='PICKUP'].location.code | [0]") }}",
+        "latitude": {{ $jmespath($json.stops,"[?type=='PICKUP'].location.latitude | [0]") }},
+        "longitude": {{ $jmespath($json.stops,"[?type=='PICKUP'].location.longitude | [0]") }},
+        "name":"{{ $jmespath($json.stops,"[?type=='PICKUP'].location.name | [0]") }}",
+        "postalCode":"{{ $jmespath($json.stops,"[?type=='PICKUP'].location.address.postal_code | [0]") }}"
+       },
+      "quantity": {
+        "grossWeight": {{ Number($json.line_items.reduce((sum, item) => sum + (item.package_weight * item.total_packages), 0)).toFixed(2) }},
+        "loadingMeters": {{ $json.loading_meters }}
+       },
+      "reference":"{{ $json.id }}"
+     }
+   ],
+  "reference":"{{ $json.id }}",
+  "transportMode":"ROAD"
+ }
+}
