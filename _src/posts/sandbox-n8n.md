@@ -1,6 +1,6 @@
 ---
 title: Testing the integration sandbox with n8n
-date: 2025-11-26
+date: 2025-12-11
 ---
 ## Intro
 This week's test subject is the [n8n](https://n8n.io/) workflow automation platform. N8n claims to be simple enough to ship in hours and sophisticated enough to scale. This made me eager to try out what it's all about and see how it works with my [integration sandbox](https://data-integration.dev/posts/Integration-sandbox-intro/).
