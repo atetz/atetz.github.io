@@ -25,7 +25,7 @@ There are two processes in the sandbox that I want to integrate:
   
 As mentioned in the docs, the APIs are secured. We'll handle this globally for both the processes. Let's have a look at an overview of the processes that we're going to integrate:
 #### Authentication
-The sandbox's APIs are secured by *OAuth2 authentication* that provides a JWT (JSON Web Token). It's possible to use a password grant and a client_credentials grant. These tokens expire every 15 minutes, so we'll need to make sure these credentials are refreshed automatically. We'll see later how this is handled automatically.
+The sandbox's APIs are secured by *OAuth2 authentication* that provides a JWT (JSON Web Token). It's possible to use a password grant and a client_credentials grant. These tokens expire every 15 minutes, so we'll need to make sure these credentials are refreshed automatically. 
 
 #### TMS shipment to Broker order
 The TMS shipments will be pulled periodically from the TMS API and then transformed and delivered to the Broker API. 
@@ -135,10 +135,10 @@ On the homescreen users are greeted with 5 main options (depending on the versio
 
 There are also some less visually prominent options that take you to the admin panel, let you use templates (predefined workflows), open the help page or let you view insights.
 
-**Data structure and flow**
-Each node receives and processes data in an array of json objects. The output of the first node is the input of the second node and so on. Except the first node that serves as a trigger node,  like a scheduler or webhook. This node only produces an output based on the trigger settings.
+#### Data structure and flow
+Each node receives and processes data in an array of json objects. The output of the first node is the input of the second node and so on. Except the very first node that serves as a trigger node (like a scheduler or webhook). This node only produces an output based on the trigger settings.
 
-By default nodes wil process an array of multiple items for each item. So for example if the node receives an array of multiple shipments to work with:
+By default nodes will process an array of multiple items for each item. So for example if the node receives an array of multiple shipments to work with:
 
 ```json
 [{ "shipment": 1 }, { "shipment": 2 }, { "shipment": 3 }]
@@ -178,23 +178,26 @@ Even for non json data, the object that is passed is wrapped in json. To illustr
 ### Setting up authentication and working with OAuth challenges
 At the start of my test I quickly found out that my sandbox's OAuth *password grant* is not supported. There were only options for Authorization Code, Client Credentials or PKCE. 
 
-Since I implemented the basic OAuth 2 from the FastAPI documentation I wondered why. After doing some digging in the community resources I found the answer on their discord: *"The password grant type is legacy and not part of OAuth 2.1 which is what we support"*.
+Since I implemented the basic OAuth2 example from the FastAPI documentation I wondered why. After doing some digging in the community resources I found the answer on their discord: *"The password grant type is legacy and not part of OAuth 2.1 which is what we support"*.
 
 Ah too bad! But how hard can it be to implement this myself? I have done it before!
+
+
 The easiest way to implement this is by refreshing the JWT on a schedule. Which means that I only need a place to *store and update* my JWT. Also I thought, going this route introduced two more challenges:
 - The pro trial I signed up for is limited to 1000 executions. If I want to refresh my JWT on a 10-15 min schedule then I would use up ~100-150 executions a day for just refreshing my credentials!
 - I didn't really find an out of the box option to update a variable that is accessible from another flow. 
 
 The pro variable feature only let's users edit the variable data from outside the workflow. I had to either use a community node, data tables, database or some other external source like a key value store. Another option I found was that I could build a *sub* workflow that checks and refreshes the token with the help of the [workflowStaticData](https://docs.n8n.io/code/cookbook/builtin/get-workflow-static-data/) feature. I could then use this sub flow every time before a post to my sandbox. 
 
-{% gallery "Sandbox docs" %}
+All of those options sounded a bit over-engineered to me for something so simple as storing rotating credentials. So I decided to upgrade my sandbox and make it compatible with the OAuth 2.1 client credentials grant. Which boiled down to adding alias field names for *username* and *password*. Namely *client_id* and *client_secret*. And adding support for getting the token with *Basic Authentication* in addition to the *x-www-form-urlencoded*. This is by no means a great implementation of OAuth, but for testing purposes it gets the job done and lets us use the builtin functionality. 
+
+{% gallery "SandboxDocs" %}
 {% galleryImg "/assets/images/n8n-sandbox/01-sandbox-docs-1.png", "sandbox docs", 500 %}
 {% endgallery %}
 
-
-All of those options sounded a bit over-engineered to me for something so simple as storing rotating credentials. So I decided to upgrade my sandbox and make it compatible with the OAuth 2.1 client credentials grant. Which boiled down to adding alias field names for *username* and *password*. Namely *client_id* and *client_secret*. And adding support for getting the token with *Basic Authentication* in addition to the *x-www-form-urlencoded*. This is by no means a great implementation of OAuth, but for testing purposes it gets the job done and lets us use the builtin functionality. 
-
-With the new functionality in the sandbox, setting up the authentication was very easy. I created an *OAuth2 API* credential and filled in the form. I also added the X-API-KEY as a *Header Auth* credential that is used to secure the incoming connections
+With the new functionality in the sandbox, setting up the authentication was very easy:
+- I created an *OAuth2 API* credential and filled in the form with the correct details. 
+- I added the X-API-KEY as a *Header Auth* credential that is used to secure the incoming webhook connections
 
 {% gallery "Auth" %}
 {% galleryImg "/assets/images/n8n-sandbox/02-n8n-2-credential-token.png", "credential token", 500 %}
@@ -238,7 +241,7 @@ The settings of this node has two main modes:
 - Manual mapping
 - JSON
 
-The **manual mapping** mode lets users build up the output message structure with a drag and drop interface. Users can define fields manually in the center and then fill them with fixed data or data from an expression. An expression can be either *[dot notation](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.set/#support-dot-notation), [JMESPath](https://docs.n8n.io/code/cookbook/jmespath/) or JavaScript*. Dragging a field from the left will automatically use *dot notation*.
+The **manual mapping** mode lets users define the output message structure with a drag and drop interface. Users can drag and drop complete fields from left to right and finetune them, or define fields manually and then fill them with fixed data or data from an expression. An expression can be either *[dot notation](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.set/#support-dot-notation), [JMESPath](https://docs.n8n.io/code/cookbook/jmespath/) or JavaScript*. Dragging a field from the left will automatically use *dot notation*.
 
 The **JSON** mode gives users a similar experience to a templating engine where the payload can be defined in plain text in combination with expressions.
 
@@ -337,10 +340,14 @@ For processing the incoming broker events for the TMS I built the following work
 {% galleryImg "/assets/images/n8n-sandbox/02-n8n-12-event-overview.png", "Result", 800 %}
 {% endgallery %}
 
-<small> My trial expired during writing this article so I ended up running the workflows using docker. </small>
+<small>My trial expired during writing this article so I ended up running the workflows with docker.</small>
 
-The first node is a Webhook trigger named *Incoming events*. I configured it to accept the *POST* http method, set the Authentication to the *Header Auth with the X-API-KEY of the Sandbox* and to respond immediately with a HTTP 204.
-After clicking the *Listen for test event* button I sent a test message from the sandbox to the webhook URL: `http://n8n:5678/webhook-test/bad3681a-ff47-4b8b-9dcc-34795ee1067a`. 
+The first node is a Webhook trigger named *Incoming events*. I configured it to:
+- accept the *POST* http method
+- set the Authentication to the *Header Auth* with the X-API-KEY of the Sandbox
+- respond immediately with a HTTP 204.
+
+After clicking the *Listen for test event* button, I triggered a couple of *ORDER_CREATED* events from the sandbox to the webhook URL.
 
 
 {% gallery "BR2TMSWebhook" 2 %}
@@ -362,7 +369,8 @@ Normally I would have stored this in a variable but I could not find a simple wa
 {% galleryImg "/assets/images/n8n-sandbox/02-n8n-16-event-editfields.png", "Set event payload", 500 %}
 {% endgallery %}
 
-Finally a *HTTP node* at the end sends the event to the TMS event API. The shipment id in the URL is set using dot notation  {% raw %}`http://sandbox:8000/api/v1/tms/event/{{ $json.shipment_id }}` and the json body is defined as `{{ $json.event.toJsonString() }}`{% endraw %} Using `toJsonString()` ensures that the object is correctly transformed to a string. Like JavaScript's `JSON.stringify`.
+Finally a *HTTP node* at the end sends the event to the TMS event API. The shipment id in the URL is set using dot notation  {% raw %}`http://sandbox:8000/api/v1/tms/event/{{ $json.shipment_id }}` and the json body is defined as `{{ $json.event.toJsonString() }}`{% endraw %}.
+Using `toJsonString()` ensures that the object is correctly transformed to a string. Like JavaScript's `JSON.stringify`.
 
 {% gallery "BR2TMSPostEvent" %}
 {% galleryImg "/assets/images/n8n-sandbox/02-n8n-17-event-post.png", "Event post", 500 %}
@@ -384,9 +392,9 @@ Workflows can throw errors when something goes wrong in a node. Or users can add
 {% galleryImg "/assets/images/n8n-sandbox/02-n8n-19-error-node-options.png", "EH Node options", 250 %}
 {% endgallery %}
 
-It's [recommended](https://docs.n8n.io/flow-logic/error-handling/) to build a dedicated *Error handling* workflow that can do something when an error is triggered. Like for example send a notification when a certain condition is met (without blasting too many notifications). Then from the settings of the main workflow point all errors to that specific *Error handling* workflow and your centralised error handling is configured. It's also good to know that Error workflow executions [are not counted](https://docs.n8n.io/insights/#which-executions-do-n8n-use-to-calculate-the-values-in-the-insights-banner-and-dashboard) as a prod execution.
+It's [recommended](https://docs.n8n.io/flow-logic/error-handling/) to build a dedicated *Error handling* workflow that can do something when an error is triggered. Like for example send a notification when a certain condition is met (without blasting too many notifications). Then from the settings of the main workflow point to that specific *Error handling* workflow and your centralised error handling is configured. It's also good to know that *Error workflow* executions are [not counted](https://docs.n8n.io/insights/#which-executions-do-n8n-use-to-calculate-the-values-in-the-insights-banner-and-dashboard) as a production execution in the licensing model.
 
-In some cases we want to handle an error differently. Let say we are sending data to our TMS API. Retrying *any* HTTP status error code will not be very efficient. If we for example get a HTTP status 422 (Unprocessable content) then a retry of the same content will just result in the same error over and over until the retry limit is reached. But a HTTP 429 (too many requests) for example might benefit from a delayed retry. Take a look at the example below:
+In some cases we want to handle an error differently. Let say we are sending data to our TMS API. Retrying *any* HTTP status error code will not be very efficient. If we for example get a HTTP status 422 (Unprocessable content) then a retry of the same content will just result in the same error over and over until the retry limit is reached. But a HTTP 429 (too many requests) might benefit from a delayed retry. Take a look at the example below:
 
 {% gallery "EHResult" %}
 {% galleryImg "/assets/images/n8n-sandbox/02-n8n-20-error-handling-429.png", "EH Result", 1000 %}
