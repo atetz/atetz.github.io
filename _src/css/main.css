@@ -66,6 +66,19 @@ h1 {
   grid-template-areas: "sidebar main main";
 }
 
+.projects-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 0.99fr 0.99fr;
+}
+
+.projectCard > article {
+  margin: 0.5rem !important;
+
+  /* background-color: #E8F9; */
+  /* padding-inline: var(--pico-block-spacing-vertical); */
+}
+
 @media only screen and (max-width: 768px) {
   .grid-container {
     grid-template-columns: 1fr;
@@ -73,6 +86,10 @@ h1 {
     grid-template-areas:
       "main"
       "sidebar";
+  }
+  .projects-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
   }
   #sidebar-picture {
     padding-bottom: none;
