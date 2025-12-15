@@ -13,7 +13,29 @@ pagination:
 ---
 
 <div class="container">
-  <div class="projects-container flex-container">
+  <h3>Highlighted projects</h3>
+
+  <p>
+    Over the years I have architected, developed and maintained data solutions
+    for customers in various industries like e-commerce, finance, manufacturing,
+    transport and logistics. These include, but are not limited to any type of:
+  </p>
+  <ul>
+    <li>Inbound order flows (ERP/TMS integration).</li>
+    <li>Automating order fulfillment to multi-carrier shipping platforms.</li>
+    <li>Custom track & trace flows with automated customer notifications.</li>
+    <li>
+      Synchronizing product inventory and master data across ERP, PIM and
+      marketplaces.
+    </li>
+    <li>Automating data extraction from PDF.</li>
+    <li>Integrating accounting records from specialized apps to ERP.</li>
+    <li>Mapping and integrating warehousing movement data.</li>
+  </ul>
+
+  <p>Below are some highlighted projects that I enjoyed the most.</p>
+
+  <div class="projects-container">
     {%- for project in pastProjects -%}
     <div class="projectCard">
       <article>
@@ -36,6 +58,7 @@ pagination:
     {%- endfor -%}
   </div>
 
+  {#
   <div id="pagination">
     {% set isFirstPage = (page.url == pagination.href.first) %}
     <button
@@ -97,4 +120,5 @@ pagination:
       Last
     </button>
   </div>
+  #}
 </div>

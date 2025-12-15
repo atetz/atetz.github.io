@@ -68,15 +68,21 @@ h1 {
 
 .projects-container {
   display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: 0.99fr 0.99fr;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto;
+  gap: 1rem;
+}
+
+.projectCard {
+  height: 100%;
+  margin: 0 !important;
 }
 
 .projectCard > article {
-  margin: 0.5rem !important;
-
-  /* background-color: #E8F9; */
-  /* padding-inline: var(--pico-block-spacing-vertical); */
+  height: 100%;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
 }
 
 @media only screen and (max-width: 768px) {
@@ -89,6 +95,7 @@ h1 {
   }
   .projects-container {
     grid-template-columns: 1fr;
+    flex-direction: row;
     grid-template-rows: auto auto;
   }
   #sidebar-picture {
