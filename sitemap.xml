@@ -28,27 +28,37 @@
     
         <url>
             <loc>/atetz.github.io/approach/</loc>
-            <lastmod>2025-12-11T16:39:32.986Z</lastmod>
+            <lastmod>2025-12-20T13:07:03.279Z</lastmod>
         </url>
     
         <url>
             <loc>/atetz.github.io/blog/</loc>
-            <lastmod>2025-12-11T16:39:33.035Z</lastmod>
+            <lastmod>2025-12-20T13:07:03.330Z</lastmod>
         </url>
     
         <url>
             <loc>/atetz.github.io/contact/</loc>
-            <lastmod>2025-12-11T16:39:33.035Z</lastmod>
+            <lastmod>2025-12-20T13:07:03.330Z</lastmod>
         </url>
     
         <url>
             <loc>/atetz.github.io/</loc>
-            <lastmod>2025-12-11T16:39:33.036Z</lastmod>
+            <lastmod>2025-12-20T13:07:03.330Z</lastmod>
         </url>
     
         <url>
-            <loc>/atetz.github.io/utils/myrouteapp-to-beeline/</loc>
-            <lastmod>2025-12-11T16:39:33.036Z</lastmod>
+            <loc>/atetz.github.io/projects/</loc>
+            <lastmod>2025-12-20T13:07:03.331Z</lastmod>
+        </url>
+    
+        <url>
+            <loc>/atetz.github.io/projects/rds2datalake/</loc>
+            <lastmod>2025-12-20T13:07:03.331Z</lastmod>
+        </url>
+    
+        <url>
+            <loc>/atetz.github.io/projects/visibility2tms/</loc>
+            <lastmod>2025-12-20T13:07:03.331Z</lastmod>
         </url>
     
 </urlset>
