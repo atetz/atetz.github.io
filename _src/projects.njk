@@ -1,0 +1,124 @@
+---
+title: Past projects
+layout: base.njk
+eleventyNavigation:
+  key: Projects
+  order: 4
+pagination:
+  data: collections.project
+  size: 6
+  alias: pastProjects
+  generatePageOnEmptyData: true
+  reverse: true
+---
+
+<div class="container">
+  <h3>Highlighted projects</h3>
+
+  <p>
+    Over the years I have architected, developed and maintained data solutions
+    for customers in various industries like e-commerce, finance, manufacturing,
+    transport and logistics. These include, but are not limited to any type of:
+  </p>
+  <ul>
+    <li>Inbound order flows (ERP/TMS integration).</li>
+    <li>Automating order fulfillment to multi-carrier shipping platforms.</li>
+    <li>Custom track & trace flows with automated customer notifications.</li>
+    <li>
+      Synchronizing product inventory and master data across ERP, PIM and
+      marketplaces.
+    </li>
+    <li>Automating data extraction from PDF.</li>
+    <li>Integrating accounting records from specialized apps to ERP.</li>
+    <li>Mapping and integrating warehousing movement data.</li>
+  </ul>
+
+  <p>Below are some highlighted projects that I enjoyed the most.</p>
+
+  <div class="projects-container">
+    {%- for project in pastProjects -%}
+    <div class="projectCard">
+      <article>
+        <hgroup>
+          <h3>
+            <a href="{{ project.url }}" class="blogPostLinks">{{
+              project.data.title
+            }}</a>
+          </h3>
+        </hgroup>
+        {% if project.data.thumbnail %}
+        <a href="{{ project.url }}" class="blogPostLinks">
+          <img
+            src="{{ project.data.thumbnail }}"
+            alt="{{ project.data.title }} thumbnail"
+        /></a>
+        {%- endif -%}
+      </article>
+    </div>
+    {%- endfor -%}
+  </div>
+
+  {#
+  <div id="pagination">
+    {% set isFirstPage = (page.url == pagination.href.first) %}
+    <button
+      onclick="window.location.href='{{ pagination.href.first }}'"
+      {%
+      if
+      isFirstPage
+      %}disabled{%
+      endif
+      %}
+    >
+      First
+    </button>
+
+    {% set previousPage = pagination.href.previous %}
+
+    <button
+      onclick="window.location.href='{{ previousPage }}'"
+      {%
+      if
+      not
+      previousPage
+      %}
+      disabled
+      {%
+      endif
+      %}
+    >
+      Previous
+    </button>
+
+    {% set nextPage = pagination.href.next %}
+
+    <button
+      onclick="window.location.href='{{ nextPage }}'"
+      {%
+      if
+      not
+      nextPage
+      %}
+      disabled
+      {%
+      endif
+      %}
+    >
+      Next
+    </button>
+
+    {% set isLastPage = (page.url == pagination.href.last) %}
+    <button
+      onclick="window.location.href='{{ pagination.href.last }}'"
+      {%
+      if
+      isLastPage
+      %}disabled{%
+      endif
+      %}
+    >
+      Last
+    </button>
+  </div>
+  #}
+</div>
