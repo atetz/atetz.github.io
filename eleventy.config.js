@@ -133,13 +133,8 @@ export default function (eleventyConfig) {
   });
   eleventyConfig.addShortcode(
     "image",
-    function (src, alt, className = null, widths = "300,600") {
-      let result = `<img src="${src}" alt="${alt}" eleventy:widths="${widths}"`;
-      if (className) {
-        result += ` class="${className}"`;
-      }
-      result += ` />`;
-      return result;
+    function (src, alt, widths = "300,600", className = "centerImage") {
+      return `<img src="${src}" alt="${alt}" eleventy:widths="${widths}" class="${className}" />`;
     },
   );
   eleventyConfig.addPlugin(sitemap, {
