@@ -7,7 +7,7 @@ date: 2026-02-06
 
 [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) has been on my list to revisit for quite some time. It's Microsoft Azure's primary solution for building integration workflows. I even felt a bit of FOMO after missing a previous opportunity to work with it professionally. So I'm glad to finally try it out with my [integration sandbox](https://data-integration.dev/posts/Integration-sandbox-intro/).
 
-Logic Apps is part of Azure's [Integration Services](https://azure.microsoft.com/en-us/products/category/integration/), which is a suite of services that enable enterprises to integrate applications, data, and processes. In other words; if you want to build / manage / orchestrate integration workflows, data pipelines, API's, messaging or serverless functions. This is the category for you.
+Logic Apps is part of Azure's [Integration Services](https://azure.microsoft.com/en-us/products/category/integration/), which is a suite of services that enable enterprises to integrate applications, data, and processes. In other words: if you want to build / manage / orchestrate integration workflows, data pipelines, APIs, messaging or serverless functions. This is the category for you.
 
 Being part of the Azure platform, there is a steeper learning curve than the integration tools that I wrote about previously. In return you get all the fine grain control and scalability options any bigger enterprise could desire. Having said that, I also found myself rediscovering that there is a "Microsoft way" of doing things.
 
@@ -94,11 +94,11 @@ G@{shape: diam, label: "success?"}
 
 ## Integrating with Logic Apps
 
-With the groundwork done, we can start integrating. If you want to follow along, you must have an [Azure account](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account). Newcomers can register for a 30 day trial period with $200 of credits. There are some exceptions to this. Microsoft gives you the opportunity to test the consumption hosting option of Logic Apps for free.
+Once the processes are clear we can start integrating. If you want to follow along, you must have an [Azure account](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account). Newcomers can register for a 30 day trial period with $200 of credits.
 
-This is wat I started out with but along the way I switched to standard hosting, which isn't supported in the trial. I switched because I noticed that the VSCode plugins of the consumption model weren't up to date, the built in managed identity was not supported for the keyvault component and data mappings required an expensive "Integration account" costing ~$300 per month. If you forget to check the costs (like I did) it will make a nice dent in those credits!
+Not all services are supported in this trial. I started out with the consumption hosting option of Logic Apps but along the way I switched to standard hosting, which isn't supported. I switched because I noticed that the VSCode plugins of the consumption model weren't up to date, the built in managed identity was not supported for the keyvault component and data mappings required an expensive "Integration account" costing ~$300 per month. If you forget to check the costs (like I did) it will make a nice dent in those credits!
 
-So if you follow everything to the T, you will have some minor costs (<10$). Just make sure to clean up your resources after your done or when you take a longer break of a couple of days.
+So if you follow everything to the T, you will have some minor costs (<10$). Just make sure to clean up your resources after you're done.
 
 ## Resources to get going
 
@@ -106,18 +106,18 @@ Usually I write a quick overview but this is Microsoft Azure we're dealing with 
 
 I found Steven W. Thomas from the Microsoft Azure Developers channel to provide an [excellent intro](https://youtu.be/4eCY79aJFt4?si=eExCfmF9ptKnQlHu) / refresher on Logic Apps including creating the first app and setting up VSCode. [How to build and manage Azure Logic Apps](https://www.youtube.com/watch?v=4Q2gHwYWW-M) by Luke Saunders is another great introduction that goes a bit more in depth working with the Logic Apps portal. If you like integration content, be sure to check his channel out!
 
-Then from there I found the _How-to guides -> Develop_ section in the [official docs](https://learn.microsoft.com/en-us/azure/logic-apps/) to be very useful. In my opinion theres an art to navigating the Microsoft docs. Sometimes I find myself chasing down circular referenced links, but when I eventually find the page I need, the information is mostly solid.
+Then from there I found the _How-to guides -> Develop_ section in the [official docs](https://learn.microsoft.com/en-us/azure/logic-apps/) to be very useful. In my opinion there's an art to navigating the Microsoft docs. Sometimes I find myself chasing down circular referenced links, but when I eventually find the page I need, the information is mostly solid.
 
 A couple specific searches led me to a [blog series](https://turbo360.com/blog/tag/tips-and-tricks) by Sandro Pereira from Turbo360 covering _Logic App best practices, tips and tricks_.
 
-Setting up the Azure connection with VSCode did give me some headache though. For some reason I could use my account with the plugins, even browse my Azure resources, but anything else required me to sign in again and resulted in the following error:
+Setting up the Azure connection with VSCode did give me some headache though. For some reason I could use my account with the plugins and browse my Azure resources, but anything else required me to sign in again and resulted in the following error:
 
 ```We're unable to complete your request
 
 unauthorized_client: The client does not exist or is not enabled for consumers. If you are the application developer, configure a new application through the App Registrations in the Azure Portal at https://go.microsoft.com/fwlink/?linkid=2083908.
 ```
 
-Consumer in this context turned out to refer to a [personal / consumer account](https://learn.microsoft.com/en-gb/answers/questions/5690717/i-am-trying-to-open-my-ms-foundry-agent-workflow-i). Even though my domain is professional and I had created a Azure account with it, Microsoft picked it up as a personal account because I also had used that e-mail to create a Microsoft account for the free version of Microsoft Teams. I ended up creating a new _Entra ID user_ account under my subscription and used that to sign in.
+Consumer in this context turned out to refer to a [personal / consumer account](https://learn.microsoft.com/en-gb/answers/questions/5690717/i-am-trying-to-open-my-ms-foundry-agent-workflow-i). Even though I used my professional email and I had created an Azure account with it, Microsoft picked it up as a personal account because I also had used that e-mail to create a Microsoft account for the free version of Microsoft Teams. I ended up creating a new _Entra ID user_ account under my subscription and used that to sign in which resolved the issue.
 
 ### Setting up the authentication workflow
 
@@ -125,7 +125,7 @@ Being a bit spoiled by n8n's approach to OAuth the previous time, I was hoping f
 
 A manual attempt to create the component stranded because I had to configure a callback URL. Unfortunately this meant that my new `client_credentials` flow was not supported. So I ended up choosing to build a separate Logic App that would refresh the credentials on a schedule and store the new Bearer token in an _Azure Key vault_.
 
-Key Vault is a service that lets users manage secrets in a secure way without saving them in the Logic App project. It does require some minor preparation. I Created a new key vault in the same resource group as my Logic Apps and created new secrets for storing the Bearer token, client secret and webhook key. This first didn't work as I expected, even though I am the admin, I still had to assign myself the "Key Vault Administrator" role to be able to create secrets.
+Key Vault is a service that lets users manage secrets in a secure way without saving them in the Logic App project. It does require some minor preparation. I Created a new key vault in the same resource group as my Logic Apps and created new secrets for storing the Bearer token, client secret and webhook key. This didn't work at first as I expected, even though I am the admin, I still had to assign myself the "Key Vault Administrator" role to be able to create secrets.
 
 With VSCode ready to go in a fresh workspace it's very easy to create a new workflow by opening the command box (`CMD + SHIFT + P` on Mac) and type _workflow_ and hit enter.
 
@@ -144,7 +144,8 @@ This is what I came up with:
 
 1. The workflow is trigged every 10 minutes by a scheduler.
 2. A _Key Vault get secret action_ gets the client_secret secret out of the Key Vault.
-   1. For local development I chose to _sign in with Entra_ for the connection. Later on I built a script that allows me to change the connection to a managed system identity that I can run before delpoying to the Azurew cloud so that the implementation was not tied to my user account.
+   1. I chose to _sign in with Entra_ for creating the connection.
+   2. Later on I built a script that allows me to change the connection to a managed system identity before deploying to the Azure cloud so that the implementation was not tied to my user account.
 
 3. A _HTTP action_ named _Get token_ calls the sandbox's _/token_ url with the _client_credentials_ grant payload to request the Bearer token.
    1. I added static variables like the base url and client\*id to the _parameters.json_ so that I can reuse these in other workflows.
@@ -161,13 +162,12 @@ This is what I came up with:
 5. Within the _successful scope_ I first parse the json response of the API. This enables me to access the data of the json further down stream.
    {% image "/assets/images/logicApps-sandbox/07-auth-parse-json.png", "parse json", %}
 
-6. Last I use a _HTTP action_ that calls the Key Vault API to update the Bearer token. There is no Key Vault action to update secrets form Logic Apps, but fortunately [we can use the API to do this](https://learn.microsoft.com/en-us/rest/api/keyvault/secrets/update-secret/update-secret?view=rest-keyvault-secrets-2025-07-01&tabs=HTTP#security).
-   1. To get this going locally I had to create [service principal](https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/local-development-service-principal?tabs=azure-portal%2Cvs-code%2Ccommand-line) and make it member of a group that has the _Key Vault Secrets Officer_ Role.
-   2. Going to the secret in the Azure portal gives you the option to copy the _Secret Identifier_ which is the URI of the secret. To be able to acces the secret via the API you will need to add the API version. My URI looks something like:
-      `{vaultBaseUrl}/secrets/{secret-name}/{secret-version}?api-version=2025-07-01`
+6. Last I use a _HTTP action_ that calls the Key Vault API to update the Bearer token. There is no Key Vault action to update secrets form Logic Apps, but fortunately we can [use the REST API to do this](https://learn.microsoft.com/en-us/rest/api/keyvault/secrets/set-secret/set-secret?view=rest-keyvault-secrets-2025-07-01&tabs=HTTP). The _Set secret_ action will create a new version for a given secret or create a secret if it does not already exist with that name.
+   1. To get this going locally I had to create [service principal](https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/local-development-service-principal?tabs=azure-portal%2Cvs-code%2Ccommand-line) and make it a member of a group that has the _Key Vault Secrets Officer_ Role.
+   2. Going to the secret in the Azure portal gives you the option to copy the _Secret Identifier_ which is the URI of the secret. To be able to acces the secret via the API you will need to remove the secret version from the URI and add the API version. The end result will look something like this: `{vaultBaseUrl}/secrets/{secret-name}?api-version=2025-07-01`
 
-   {% image "/assets/images/logicApps-sandbox/08-auth-keyvault-patch.png", "patch kv" %}
-   {% image "/assets/images/logicApps-sandbox/09-auth-keyvault-patch-creds.png", "patch kv creds", %}
+   {% image "/assets/images/logicApps-sandbox/08-auth-keyvault-put.png", "put kv" %}
+   {% image "/assets/images/logicApps-sandbox/09-auth-keyvault-put-creds.png", "put kv creds", %}
 
 #### Testing and debugging
 
@@ -182,7 +182,7 @@ This will start the debugger. Then from there you can run the command _Azure Log
 The overview shows the options for running the trigger and viewing the previous runs.
 
 {% image "/assets/images/logicApps-sandbox/12-auth-debug-ov.png", "Overview" ,"450,900"%}
-Running the Trigger wil make it pause on the breakpoint.
+Running the Trigger will make it pause on the breakpoint.
 
 {% image "/assets/images/logicApps-sandbox/13-auth-debug-run.png", "Run","450,900"%}
 
@@ -190,7 +190,7 @@ I really liked this feature because it let's me watch and inspect the current va
 
 {% image "/assets/images/logicApps-sandbox/14-auth-debug-fail.png", "Failed run"%}
 
-Some actions are hidden due to security considerations.
+The key vault results are hidden due to security considerations.
 {% image "/assets/images/logicApps-sandbox/15-auth-debug-fail-det.png", "Details failed run" %}
 
 If all checkmarks are green, the run was successful!
@@ -198,10 +198,61 @@ If all checkmarks are green, the run was successful!
 
 ### Building the TMS shipment to Broker order workflow
 
-After seeding 100 new shipments in the sandbox, I created a workflow called _new tms shipment to broker order_.
+After seeding 1000 new shipments in the sandbox, I created a workflow called _ShipmentsToOrders_.
 
-#### Data mapping
+{% gallery "ShipmentsToOrders" 3 %}
+{% galleryImg "/assets/images/logicApps-sandbox/17-s2o-overview1.png", "s2o overview 1", 500 %}
+{% galleryImg "/assets/images/logicApps-sandbox/18-s2o-overview2.png", "s2o overview 2", 500 %}
+{% galleryImg "/assets/images/logicApps-sandbox/19-s2o-overview3.png", "s2o overview 3", 500 %}
 
+{% endgallery %}
+
+1. The workflow starts with a scheduler that triggers every hour.
+2. Immediately after the trigger of the flow a new array variable _resultArray_ is initialised that will be used further down the workflow to store the response status of the individual order creation.
+
+{% image "/assets/images/logicApps-sandbox/21-s2o-arrayvar.png", "new array variable" %}
+
+3. A _Key Vault get secret action_ gets the bearer token out of the Key Vault.
+4. A _HTTP action_ gets the new shipments from the API.
+   1. For testing purposes I set the limit to 10 which allows me to process 10 shipments at a time.
+
+{% image "/assets/images/logicApps-sandbox/22-s2o-get-shipments.png", "get shipments" %}
+
+5. Two scopes are added to handle either successful or failed responses from the _Get new shipments action_.
+6. The response body of the shipments API will be empty if there are no new shipments. A conditional _Has shipments_ action is added to prevent any empty payload from being processed further.
+
+{% image "/assets/images/logicApps-sandbox/23-s2o-has-shipments.png", "has shipments" %}
+
+7. Next, the shipments JSON is parsed to an object which will allow me to process each individual item in a _For each action_.
+
+{% image "/assets/images/logicApps-sandbox/24-s2o-for-each.png", "for each shipment" %}
+
+8. The shipment payload is transformed to the broker format using a [Liquid](https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-enterprise-integration-liquid-transform?source=recommendations&tabs=consumption) _JSON to JSON action_.
+   1. Wait? No data mapper? At first I dismissed using the mapper since I read **Data Mapper XSLT** and my brain immediately thought XML transformations. So for this mapping I went ahead and wrote a liquid template. Later when tinkering with it I discovered that it also works with JSON. And in fact that it is possible to work with [JSON in XSLT](https://www.w3.org/TR/xslt-30/#json).
+
+{% image "/assets/images/logicApps-sandbox/25-s2o-liquid-map.png", "liquid map" %}
+
+9. The transformed payload is posted to the order API.
+
+{% image "/assets/images/logicApps-sandbox/26-s2o-post-order.png", "Post order" %}
+
+10. The shipmentId and HTTP status code are added to the _resultArray_ using an _Append to array variable_ action.
+
+{% image "/assets/images/logicApps-sandbox/27-s2o-add-arrayvar.png", "add array variable" %}
+
+11. After the loop a _Filter array_ action is used to filter out any unsuccessful status codes.
+
+{% image "/assets/images/logicApps-sandbox/28-s2o-filter-errors.png", "filter errors" %}
+
+12. The resulting array is then checked with a condition. If the length of the body is 0 then we have no errors, otherwise errors are captured for handling.
+
+{% image "/assets/images/logicApps-sandbox/29-s2o-body-null.png", "body length 0" %}
+
+Et voila! Executing the workflow results in 10 processed shipments that are validated by the sandbox!
+
+#### Liquid data mapping
+
+Let's dive a bit deeper into the data mapping that I brushed over earlier.
 The end result of the data mapping does the following:
 
 - **Generate message metadata**
@@ -228,7 +279,7 @@ Et voila! After building and testing the data mapping, executing the workflow re
 
 ### Building the broker event to TMS event workflow
 
-For processing the incoming broker events for the TMS I built the following workflow:
+Now that auth is working, let's build the shipment to order workflow. For processing the incoming broker events for the TMS I built the following workflow:
 
 <small>My trial expired during writing this article so I ended up running the workflows with docker.</small>
 
