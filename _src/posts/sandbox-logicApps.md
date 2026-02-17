@@ -5,7 +5,7 @@ date: 2026-02-06
 
 ## Intro
 
-[Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) has been on my list to revisit for quite some time. It's Microsoft Azure's primary solution for building integration workflows. I even felt a bit of FOMO after missing a previous opportunity to work with it professionally. So I'm glad to finally try it out with my [integration sandbox](https://data-integration.dev/posts/Integration-sandbox-intro/).
+[Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) has been on my list to revisit for quite some time. It's Microsoft Azure's primary solution for building integration workflows. I even felt a bit of FOMO after missing a previous opportunity to work with it professionally. So I'm glad to finally try it out with my [integration sandbox](https://data-integration.dev/posts/Integration-sandbox-intro/). 
 
 Logic Apps is part of Azure's [Integration Services](https://azure.microsoft.com/en-us/products/category/integration/), which is a suite of services that enable enterprises to integrate applications, data, and processes. In other words: if you want to build / manage / orchestrate integration workflows, data pipelines, APIs, messaging or serverless functions. This is the category for you.
 
@@ -252,89 +252,261 @@ Et voila! Executing the workflow results in 10 processed shipments that are vali
 
 #### Liquid data mapping
 
-Let's dive a bit deeper into the data mapping that I brushed over earlier.
-The end result of the data mapping does the following:
+Let's dive a bit deeper into the data mapping that I brushed over earlier. [Liquid](https://shopify.github.io/liquid/) is a open source templating language written in Ruby and created by Shopify. Since Azure Logic Apps does not run on ruby but .NET it uses the [DotLiquid](https://www.dotliquid.org/) implementation for Liquid. In practice this meant that there are some [differences](https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-enterprise-integration-liquid-transform?tabs=consumption#liquid-template-considerations) between the two to keep in mind. The most notable differences for me where that I had to capitalise the name of the functions and that the time formatting worked a bit different. And I found out by trial and error that the Logic Apps parser expects the JSON to be wrapped in a content object: `{"content":{ json to transform here}}`.
 
-- **Generate message metadata**
-  - Set messageDate to current timestamp with {% raw %} ` "messageDate":"{{DateTime.now().toISO() }}",` {% endraw %}
-  - Set custom messageReference with {% raw %} `  "messageReference":"{{DateTime.now().toMillis()}}-{{ $json.id }}"` {% endraw %}
-  - Add fixed senderId and messageFunction.
-- **Stops to separate pickUp and consignee objects**
-  - Split the stops array into separate pickUp and consignee objects based on the type field (PICKUP vs DELIVERY).
-  - This is done using a JMESpath filter `$json.stops,"[?type=='DELIVERY']`
-  - For example: {% raw %} `"address1":"{{ $jmespath($json.stops,"[?type=='DELIVERY'].location.address.address | [0]") }}"` {% endraw %}
-- **Concatenate goods descriptions**
-  - Join all line_item descriptions with a pipe separator into a single goodsDescription field.
-    {% raw %} `{{ $jmespath($json.line_items,"join('|',[*].description)") }}` {% endraw %}
-- **Un-nest line items to handling units**
-  - Each line_item gets replicated by its total_packages count. So 3 line items with 4, 1, and 3 packages become 8 individual handlingUnits.
-  - Transform TMS package types to broker packagingQualifier.
-- **Combine date and time fields**
-  - Merge planned_date with time_window_start/end to create ISO datetime strings
-- **Calculate total gross weight** - Sum the package_weight × total_packages across all line items - Using a inline JavaScript reduce
+As usual, I followed the sandbox's [mapping requirements](https://github.com/atetz/integration-sandbox/blob/main/docs/integrations/tms-to-broker.md) to get to the desired _broker order_ format. At first I started out with the online [LiquidJS playground](https://liquidjs.com/playground.html) which has a very handy interface to begin templating. But I did not fancy copy and pasting between my browser and VSCode so I eventually settled for an older plugin called [Shopify Liquid Preview for Visual Studio Code](https://github.com/kirchner-trevor/vscode-shopify-liquid-preview?tab=readme-ov-file#shopify-liquid-preview-for-visual-studio-code). This plugin had exactly what I wanted: Live editing a template with preview. All I needed to do was create a `.liquid` file and a `.json` file with the same name and I could run the preview command. Sweet!
 
-All other fields were mapped using _dot notation_.
+{% image "/assets/images/logicApps-sandbox/30-dm-preview.png", "Preview Liquid", "400,800" %}
 
-Et voila! After building and testing the data mapping, executing the workflow results in 10 processed shipments that are validated by the sandbox!
+The [end result](https://github.com/atetz/LAIntegrationSandbox) of the data mapping does the following:
+
+##### Generate message metadata
+
+- Set messageDate to current timestamp.
+
+```liquid
+  {% raw %} "{{ "now" | Date: "yyyy-MM-ddTHH:mm:ssZ" }}" {% endraw %}
+```
+
+Note that the date format differs from the Shopify implementation. Which would have been something like `"now" | date: "%Y-%m-%d %H:%M"`.
+
+- Set custom messageReference with
+
+```liquid
+{% raw %} `"{{ "now" | Date: "yyyy-MM-ddTHH:mm:ssZ" }}{{ content.id }}"` {% endraw %}
+```
+
+content.id follows a nice dot notation like convention for accessing the data.
+
+- Add fixed senderId and messageFunction.
+
+##### Stops to separate pickUp and consignee objects
+
+- Split the stops array into separate pickUp and consignee objects and assign these to a variable based on the type field (PICKUP vs DELIVERY).
+
+```liquid
+   {% raw %}{%- for stop in content.stops -%}
+      {%- if stop.type == 'DELIVERY' -%}
+         {% assign consignee = stop %}
+      {%- elsif stop.type == 'PICKUP' -%}
+         {% assign pickUp = stop %}
+      {%- endif -%}
+   {%- endfor -%} {% endraw %}
+```
+
+These object are then very easy to query inline. For example:
+
+```liquid
+{% raw %}"city": "{{ consignee.location.address.city }}"{% endraw %}
+```
+
+##### Concatenate goods descriptions
+
+- Join all line_item descriptions with a pipe separator into a single goodsDescription field.
+
+```liquid
+{% raw %}"goodsDescription": "{% for line in content.line_items %}{{ line.description }}{% unless forloop.last %}|{% endunless %}{% endfor %}"{% endraw %}
+```
+
+- `unless` and `endunless` make sure that the pipe seperator is not added after the last description.
+- I initially used a map but this did not work in the dotnet version. The map approach that failed:
+
+```liquid
+{% raw %}{% failed map approach %}
+"goodsDescription": "{{ content.line_items | map: "description" | join: "|" }}"{% endraw %}
+```
+
+##### Expanding line items to handling units
+
+- Each line_item gets replicated by its total_packages count. So 3 line items with 4, 1, and 3 packages become 8 individual handlingUnits.
+
+```liquid
+{% raw %}{%- for line in content.line_items -%}
+    {% comment %} package_type mapping {% endcomment %}
+    ...
+
+    {%- for i in (1..line.total_packages) -%}
+        {
+            "grossWeight": {{ line.package_weight }},
+            "height": {{ line.height }},
+            "length": {{ line.length }},
+            "width": {{ line.width }},
+            "packagingQualifier": "{{ packagingQualifier }}"
+        }{% unless forloop.last %},{% endunless %}
+    {%- endfor -%}{% unless forloop.last %},{% endunless %}
+{%- endfor -%}{% endraw %}
+```
+
+In this case I chose to loop over each line item and then within that loop I loop again over the range of the quantity. The `unless` and `endunless` trick is used to ensure that the lines follow the JSON array syntax for comma's.
+
+- Map TMS package types to broker packagingQualifier.
+
+```liquid
+{% raw %}{%- case line.package_type -%}
+    {%- when 'BALE' -%}{%- assign packagingQualifier = 'BL' -%}
+    {%- when 'BOX' -%}{%- assign packagingQualifier = 'BX' -%}
+    {%- when 'COIL' -%}{%- assign packagingQualifier = 'CL' -%}
+    {%- when 'CYLINDER' -%}{%- assign packagingQualifier = 'CY' -%}
+    {%- when 'DRUM' -%}{%- assign packagingQualifier = 'DR' -%}
+    {%- when 'OTHER' -%}{%- assign packagingQualifier = 'OT' -%}
+    {%- when 'PLT' -%}{%- assign packagingQualifier = 'PL' -%}
+    {%- when 'CRATE' -%}{%- assign packagingQualifier = 'CR' -%}
+{%- endcase -%}{% endraw %}
+```
+
+If an unmapped package_type comes through, Liquid will leave packagingQualifier undefined. I could also have added a default here.
+
+##### Combine date and time fields
+
+- Merge planned_date with time_window_start/end to create ISO datetime strings
+
+```liquid
+{% raw %}{
+   "dateTime": "{{ pickUp.planned_date }}T{{ pickUp.planned_time_window_start }}Z",
+   "qualifier": "PERIOD_EARLIEST"
+}{% endraw %}
+```
+
+##### Calculate total gross weight
+
+- Sum the package_weight × total_packages across all line items and assign it to a variable
+
+```liquid
+{% raw %}{%- assign grossWeight = 0.0 -%}
+{%- for line in content.line_items -%}
+  {%- assign line_weight = line.package_weight | Times: line.total_packages -%}
+  {%- assign grossWeight = grossWeight | Plus: line_weight -%}
+{%- endfor -%}{% endraw %}
+```
+
+- Use the weight and round it to 2 decimal places.
+
+```liquid
+{% raw %}"grossWeight": {{ grossWeight | round: 2 }}{% endraw %}
+```
+
+All other fields were mapped directly.
 
 ### Building the broker event to TMS event workflow
 
-Now that auth is working, let's build the shipment to order workflow. For processing the incoming broker events for the TMS I built the following workflow:
+Now on to the event workflow. This time I desperately wanted to try out the _Data Mapper_. It has some [limitations](https://learn.microsoft.com/en-us/azure/logic-apps/create-maps-data-transformation-visual-studio-code#limitations-and-known-issues), one of them being: _Data Mapper currently works only in Visual Studio Code running on Windows operating systems._ Unfortunately -for me as a Mac user- that meant switching to Windows. So for the last part I spun up a Windows 11 X64 VM on my homeserver. <small>I actually started out with a ARM VM on my Mac but this gave me some compatibility issues that I wasn't interested in debugging. </small>
 
-<small>My trial expired during writing this article so I ended up running the workflows with docker.</small>
+After having installed, configured and debloated Windows, this is what I came up with:
 
-The first node is a Webhook trigger named _Incoming events_. I configured it to:
+{% gallery "EventIn" 2 %}
+{% galleryImg "/assets/images/logicApps-sandbox/31-event-overview1.png", "Event overview 1", 500 %}
+{% galleryImg "/assets/images/logicApps-sandbox/32-event-overview2.png", "Event overview 2", 500 %}
+{% endgallery %}
 
-- accept the _POST_ http method
-- set the Authentication to the _Header Auth_ with the X-API-KEY of the Sandbox
-- respond immediately with a HTTP 204.
+1. The workflow gets triggered by an _Inbound Event_ action that is set to the method POST. As soon as the workflow is running I will listen on an endpoint that can receive HTTP messages.
+   {% image "/assets/images/logicApps-sandbox/33-event-InboundEvent.png", "Inbound HTTP" %}
 
-After clicking the _Listen for test event_ button, I triggered a couple of _ORDER_CREATED_ events from the sandbox to the webhook URL.
+2. The sandbox will send a _X-API-KEY_ header with a secret value for each incoming message. I stored the secret in _Key Vault_ so that I can retrieve it with the _Get Secret_ action and validate it against the incoming header with the _Conditional action_.
+   1. `@triggerOutputs()?['headers']?['x-api-key']` question marks are used to avoid getting an error if the header does not exist.  
+      {% image "/assets/images/logicApps-sandbox/34-event-validate-key.png", "Validate key" %}
+3. If the incoming key is valid a _Response action_ is triggered with HTTP status code 202 that will be returned to the sender immediately. Indicating that we got the message but are still processing it. If the incoming key is invalid then we return a status code 401.
+   {% image "/assets/images/logicApps-sandbox/35-event-accept-key.png", "Accepted key" %}
+   {% image "/assets/images/logicApps-sandbox/36-event-false-key.png", "False key" %}
+4. With a _Arrayfilter_ action I check for the existence of shipmentId's in the body. In this case I check if the length of the shipmentId key is greater that 0.
+   1. `length(item()?['shipmentId'])`
+      {% image "/assets/images/logicApps-sandbox/37-event-filter.png", "Filter events" %}
+5. From here on the events are going to be transformed and send to the sandbox for validation in a loop. First I get the Bearer token out of the Key Vault. This might also be possible outside of the loop but it increases out changes of having an invalid token.
+6. The JSON payload is parsed because I need to use the shipmentId later. The shipmentId won't be in the Body after the transformation.
+7. A _XSLT DataMapper action_ performs the transformation. More on this later.
+   {% image "/assets/images/logicApps-sandbox/38-event-datamapping-action.png", "DataMapper action" %}
+8. An issue I ran into while using the _DataMapper_ was that it always handled a string with a ISO value as a date time object. So in my case a string with the value `2026-02-23T10:29:36.694588` would be seen as a time in my local timezone and converted back to a UTC string with a time offset.
 
-Next up in the workflow is a filter node that prevents empty objects from passing through (just like in the shipments flow). Up until now the json that is passed through nodes is seen as 1 single webhook object which has seperate keys for the incoming headers, params, query and body. To grab the array of events from the incoming message body I added a _Split Out_ and set it to the body field.
+   I double checked my schemas, tried casting the values explicitly to a string and even concatenating substrings without success. Since we don't always have the luxury of changing the issue in the source I worked around it with a hacky solution: concatenating `$TZT` to the end of the string and removing it with a _compose action_ after the _data mapping._
+   {% image "/assets/images/logicApps-sandbox/39-event-replacehack.png", "Replace hack" %}
+   1. `replace(string(body('Transform_broker_event_to_TMS')), '$TZT', '')`
 
-Now that I have an array of events, I can start mapping the broker data to TMS data with an _Edit Fields_ node. This mapping is a lot simpler and uses the same methods as in the shipment flow. Because the TMS event endpoint needs the shipmentId in the URL, I wrapped the event in an object that has the event data and the shipmentId.
+9. Last the newly transformed Body is sent to the sandbox.
+   {% image "/assets/images/logicApps-sandbox/40-event-post-tms.png", "POST TMS" %}
 
-Normally I would have stored this in a variable but I could not find a simple way to do this. There is also the option to acces the input of a previous node, which meant I could have accessed the data from before the mapping. But I prefer to work with the current state of the data and therefore added it. I made the end result available [here](/assets/n8n/broker-to-tms-mapping.txt).
+After triggering some events from sandbox to the *Inbound Event* I got some nice green checkmarks!
+   {% image "/assets/images/logicApps-sandbox/41-event-result.png", "Result event workflow" %}
 
-Finally a _HTTP node_ at the end sends the event to the TMS event API. The shipment id in the URL is set using dot notation {% raw %}`http://sandbox:8000/api/v1/tms/event/{{ $json.shipment_id }}` and the json body is defined as `{{ $json.event.toJsonString() }}`{% endraw %}.
-Using `toJsonString()` ensures that the object is correctly transformed to a string. Like JavaScript's `JSON.stringify`.
+Let's start tying some ends and dive into what's going on in the *Data Mapper*!
+#### DataMapper 
+On the Azure plugin tab in VSCode there is a extra section called *Data Mapper*. 
+   
+   {% image "/assets/images/logicApps-sandbox/42-datamapper.png", "Datamapper tab" %}
+   
+When a new map is created, users must first define a *Source* and a *Destination*. This is done by selecting a schema. For my Broker and TMS event payloads I decided to generate a schema with the Parse JSON action and save it in the Artifacts/Schemas directory.
 
-After some testing the final result executed perfectly!
+Once the schemas are selected it's possible to link fields from the source to the target with a drag and drop interface. Transformations are applied by adding functions in between. There are a whole lot of pre-defined functions available and it is also possible to [create your own function](https://learn.microsoft.com/en-us/azure/logic-apps/create-maps-data-transformation-visual-studio-code#create-custom-xml-functions). 
+   {% image "/assets/images/logicApps-sandbox/43-datamapper-overview.png", "Datamapper overview" %}
 
-## Easy peasy! What about Error handling?
+As mentioned earlier, the Data Mapper uses XSLT under the hood. Even for JSON! If we look at the generated XSLT in the Maps folder we can see that it uses a json-to-xml() function that is available in XSLT 3.0 and XPATH 3.1.
+```xslt
+<xsl:variable name="xmlinput" select="json-to-xml(/)" />
+```
 
-Handling what should happen after the process has diverted from the _happy flow_ is a very important aspect of integration. The business needs to be able to trust the automation and when things fail they need to be resolved quickly. Especially when automations grow complexer and handle more and more cases. This is a whole article worthy subject by itself so I wont dive into the details here, but I do have a small example for handling only certain HTTP status codes.
+Further in the document values are then referenced with:
+```xslt
+<string key="external_order_reference">{/*/*[@key='order']/*[@key='reference']}</string>
+```
 
-Workflows can throw errors when something goes wrong in a node. Or users can add a _Stop and Error node_ to manually throw an error. The most basic error handling like a retry, stop and fail or continue can be set on the node itself.
+It also has a small testing panel that let's users test the output of the mapping immediately. Unfortunately it isn't resizable, but it works well!
 
-It's [recommended](https://docs.n8n.io/flow-logic/error-handling/) to build a dedicated _Error handling_ workflow that can do something when an error is triggered. Like for example send a notification when a certain condition is met (without blasting too many notifications). Then from the settings of the main workflow point to that specific _Error handling_ workflow and your centralised error handling is configured. It's also good to know that _Error workflow_ executions are [not counted](https://docs.n8n.io/insights/#which-executions-do-n8n-use-to-calculate-the-values-in-the-insights-banner-and-dashboard) as a production execution in the licensing model.
+   {% image "/assets/images/logicApps-sandbox/44-datamapper-testpanel.png", "Datamapper testpanel" %}
+##### Date strings 
+As mentioned in the walkthrough of the workflow I used a hacky workaround to prevent the date time string from being processed as a date object. This is done by adding a *Concat* function.
 
-In some cases we want to handle an error differently. Let say we are sending data to our TMS API. Retrying _any_ HTTP status error code will not be very efficient. If we for example get a HTTP status 422 (Unprocessable content) then a retry of the same content will just result in the same error over and over until the retry limit is reached. But a HTTP 429 (too many requests) might benefit from a delayed retry. Take a look at the example below:
+   {% image "/assets/images/logicApps-sandbox/45-datamapper-concat.png", "Datamapper concat" %}
 
-The TMS Shipment to broker order flow has now been extended to handle HTTP 429 status codes differently:
+##### Fixed values
+For the source field I needed to set a fixed value of *BROKER*. I could not see a function or option for this to I chose to add a *To String* function and gave that a fixed value as input.
 
-- The HTTP node _On Error_ setting is set to _Continue (using error output)_.
-- The IF node checks _if the HTTP status is 429_ AND _the runIndex is less than 3_. The runIndex is an [internal n8n counter](https://docs.n8n.io/code/builtin/n8n-metadata/) that tracks how many times n8n has executed the current node. So this works as a retry count of 3.
-- If True, the workflow goes on to a _Wait node_ followed by a _Edit Fields node_ that removes the error the data before going back to the _HTTP node_ to try again.
-- If False, we aggregate the individual shipment errors into 1 message with all the relevant info. This is done by using an _Edit fields_ node to set the data and an _Aggregate node_ to collect all failed messages into 1. Last we throw the error with a _Stop and Error node_.
-- The _Stop and Error node_ then sends the custom error message of to the _Error workflow._
+{% image "/assets/images/logicApps-sandbox/46-datamapper-tostring.png", "Datamapper to string" %}
+##### Null safe position
+If an order is created or cancelled then it will not have a position in the event data. In this case I want to map data when the position is not null. A *Is Null* function is added followed by a *Logical Not* which inverses the boolean. Basically making it a *Not Null* check. Which is then used in an if statement to map the corresponding fields.
 
+{% image "/assets/images/logicApps-sandbox/47-datamapper-nullsafe.png", "Datamapper nullsafe" %}
+##### Custom key value map function
+To map the values of the *situation.event* field to the corresponding TMS *event_type* I created a custom function because I could not find a value map kind of function and it was not possible to extend the *If Else* function with multiple branches.
+
+In the `Artifacts\DataMapper\Extensions\Functions` folder I created a `CustomFunctions.xml` with the following contents:
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<customfunctions>
+   <function name="event-mapping" as="xs:string" description="Evaluates the condition and returns corresponding value.">
+      <param name="eventType" as="xs:string"/>
+   <value-of select="
+        let $eventMap := map{
+          'ORDER_CREATED':'BOOKED',
+          'DRIVING_TO_LOAD':'DISPATCHED',
+          'ORDER_LOADED':'PICKED_UP',
+          'ETA_EVENT':'ETA_CHANGED',
+          'ORDER_DELIVERED':'DELIVERED',
+          'CANCEL_ORDER':'CANCELLED'
+        }
+        return $eventMap($eventType)
+      "/>
+   </function>
+</customfunctions>
+```
+
+Any [stylesheet function](https://www.w3.org/TR/xslt-30/#stylesheet-functions) within the `<customfunctions>` node will be picked up by the *Data Mapper* as a custom function.
+
+{% image "/assets/images/logicApps-sandbox/48-datamapper-customfunc.png", "Datamapper customfunc" %}
+
+Also new since XSLT 3.0 is the [map](https://www.w3.org/TR/xslt-30/#map) function which gives us a key and value structure with a couple of features. The most simple one being the `map:get($map, $key)` to get a value by a given key. 
+
+In my *event-mapping* above I take in a string parameter called eventType. Then I select the value of a inline call to my value map which uses the parameter as a key to get the value.
+
+And there we have it! All of the fields are mapped.
 ## Wrapping up
+If you made it this far then hats off to you! This post got *quite lengthy* without even diving much into error handling or deploying the resources to Azure. Nevertheless I still think there are some nice gems here that could be very helpful for anyone looking into Logic Apps. 
 
-In this post I walked you through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox). Then I explained how to implement them in n8n. First I built a flow that handled getting, transforming and sending new shipments. Then a flow that handles incoming events. All while explaining why and how I use each node along the way.
+To recap we did the following:
+- walk through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox). 
+- overview of the right resources to setup Logic Apps and VSCode
+- built a flow that handled authentication and stored values in *Key Vault* secrets
+- getting, transforming and sending new shipments.
+- handles incoming
+- data transformations with *Liquid* and with the *Data Mapper*
 
-If you followed along, we've covered the basics of:
+All while explaining why and how I use each component along the way. And which challenges I faced along the way.
 
-- Authentication
-- Scheduling / batch processing
-- Receiving and sending messages via APIs/webhooks
-- Data transformation and mapping
-- Conditional routing
-- Error handling
-
-### What's next?
-
-In the next weeks I'm going to test the sandbox with [Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/). I also read that n8n is going to release a new version soon. So I might revisit this article in a little while!
-
-What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/), experiences, or even just a quick hello!
+Thank you for discovering Azure Logic Apps with me! What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/), experiences, or even just a quick hello!
