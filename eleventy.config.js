@@ -11,7 +11,7 @@ const PORTRAIT_LIGHTBOX_IMAGE_WIDTH = 720;
 async function galleryImageShortcode(
   src,
   alt,
-  previewWidth = DEFAULT_GALLERY_IMAGE_WIDTH
+  previewWidth = DEFAULT_GALLERY_IMAGE_WIDTH,
 ) {
   let lightboxImageWidth = LANDSCAPE_LIGHTBOX_IMAGE_WIDTH;
   src = Util.normalizeImageSource(
@@ -19,7 +19,7 @@ async function galleryImageShortcode(
       input: this.eleventy.directories.input,
       inputPath: this.page.inputPath,
     },
-    src
+    src,
   );
 
   const metadata = await sharp(src).metadata();
@@ -115,7 +115,28 @@ export default function (eleventyConfig) {
     "_src/assets/favicons/apple-touch-icon.png": "/apple-touch-icon.png",
   });
   eleventyConfig.addPlugin(eleventyNavigationPlugin);
-  eleventyConfig.addPlugin(eleventyImageTransformPlugin);
+  eleventyConfig.addPlugin(eleventyImageTransformPlugin, {
+    // output image formats
+    formats: ["avif", "webp", "jpeg", "png"],
+
+    // output image widths
+    widths: ["auto"],
+
+    // optional, attributes assigned on <img> nodes override these values
+    htmlOptions: {
+      imgAttributes: {
+        loading: "lazy",
+        decoding: "async",
+      },
+      pictureAttributes: {},
+    },
+  });
+  eleventyConfig.addShortcode(
+    "image",
+    function (src, alt, widths = "300,600", className = "centerImage") {
+      return `<img src="${src}" alt="${alt}" eleventy:widths="${widths}" class="${className}" />`;
+    },
+  );
   eleventyConfig.addPlugin(sitemap, {
     sitemap: {
       hostname: "https://data-integration.dev",
