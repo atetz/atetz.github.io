@@ -1,11 +1,11 @@
 ---
 title: Testing the integration sandbox with Azure Logic Apps
-date: 2026-02-06
+date: 2026-02-18
 ---
 
 ## Intro
 
-[Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) has been on my list to revisit for quite some time. It's Microsoft Azure's primary solution for building integration workflows. I even felt a bit of FOMO after missing a previous opportunity to work with it professionally. So I'm glad to finally try it out with my [integration sandbox](https://data-integration.dev/posts/Integration-sandbox-intro/). 
+[Azure Logic Apps](https://azure.microsoft.com/en-us/products/logic-apps/) has been on my list to revisit for quite some time. It's Microsoft Azure's primary solution for building integration workflows. I even felt a bit of FOMO after missing a previous opportunity to work with it professionally. So I'm glad to finally try it out with my [integration sandbox](https://data-integration.dev/posts/Integration-sandbox-intro/).
 
 Logic Apps is part of Azure's [Integration Services](https://azure.microsoft.com/en-us/products/category/integration/), which is a suite of services that enable enterprises to integrate applications, data, and processes. In other words: if you want to build / manage / orchestrate integration workflows, data pipelines, APIs, messaging or serverless functions. This is the category for you.
 
@@ -98,7 +98,7 @@ Once the processes are clear we can start integrating. If you want to follow alo
 
 Not all services are supported in this trial. I started out with the consumption hosting option of Logic Apps but along the way I switched to standard hosting, which isn't supported. I switched because I noticed that the VSCode plugins of the consumption model weren't up to date, the built in managed identity was not supported for the keyvault component and data mappings required an expensive "Integration account" costing ~$300 per month. If you forget to check the costs (like I did) it will make a nice dent in those credits!
 
-So if you follow everything to the T, you will have some minor costs (<10$). Just make sure to clean up your resources after you're done.
+So if you follow everything to the T, you will have some minor costs (<10$). Just make sure to clean up your resources after you're done. I also shared my [repository](https://github.com/atetz/LAIntegrationSandbox/tree/main) with the project for anyone to use.
 
 ## Resources to get going
 
@@ -389,7 +389,7 @@ All other fields were mapped directly.
 
 ### Building the broker event to TMS event workflow
 
-Now on to the event workflow. This time I desperately wanted to try out the _Data Mapper_. It has some [limitations](https://learn.microsoft.com/en-us/azure/logic-apps/create-maps-data-transformation-visual-studio-code#limitations-and-known-issues), one of them being: _Data Mapper currently works only in Visual Studio Code running on Windows operating systems._ Unfortunately -for me as a Mac user- that meant switching to Windows. So for the last part I spun up a Windows 11 X64 VM on my homeserver. <small>I actually started out with a ARM VM on my Mac but this gave me some compatibility issues that I wasn't interested in debugging. </small>
+Now on to the event workflow. This time I desperately wanted to try out the _Data Mapper_. I quickly found out that it has some [limitations](https://learn.microsoft.com/en-us/azure/logic-apps/create-maps-data-transformation-visual-studio-code#limitations-and-known-issues), one of them being: _Data Mapper currently works only in Visual Studio Code running on Windows operating systems._ Unfortunately -for me as a Mac user- this meant switching to Windows. So for the last part I spun up a Windows 11 x64 VM on my homeserver. <small>I actually started out with a ARM VM on my Mac but this gave me some compatibility issues that I wasn't interested in debugging. </small>
 
 After having installed, configured and debloated Windows, this is what I came up with:
 
@@ -398,75 +398,87 @@ After having installed, configured and debloated Windows, this is what I came up
 {% galleryImg "/assets/images/logicApps-sandbox/32-event-overview2.png", "Event overview 2", 500 %}
 {% endgallery %}
 
-1. The workflow gets triggered by an _Inbound Event_ action that is set to the method POST. As soon as the workflow is running I will listen on an endpoint that can receive HTTP messages.
+1. The workflow gets triggered by an _Inbound Event_ action that is set to the method _POST_. Making sure that the workflow will listen on an endpoint that can receive HTTP messages.
    {% image "/assets/images/logicApps-sandbox/33-event-InboundEvent.png", "Inbound HTTP" %}
 
 2. The sandbox will send a _X-API-KEY_ header with a secret value for each incoming message. I stored the secret in _Key Vault_ so that I can retrieve it with the _Get Secret_ action and validate it against the incoming header with the _Conditional action_.
    1. `@triggerOutputs()?['headers']?['x-api-key']` question marks are used to avoid getting an error if the header does not exist.  
       {% image "/assets/images/logicApps-sandbox/34-event-validate-key.png", "Validate key" %}
-3. If the incoming key is valid a _Response action_ is triggered with HTTP status code 202 that will be returned to the sender immediately. Indicating that we got the message but are still processing it. If the incoming key is invalid then we return a status code 401.
+3. If the incoming key is valid a _Response action_ is triggered with HTTP status code 202 that will be returned to the sender immediately. Indicating that the integration got the message but are still processing it. If the incoming key is invalid then it returns a status code 401.
    {% image "/assets/images/logicApps-sandbox/35-event-accept-key.png", "Accepted key" %}
    {% image "/assets/images/logicApps-sandbox/36-event-false-key.png", "False key" %}
-4. With a _Arrayfilter_ action I check for the existence of shipmentId's in the body. In this case I check if the length of the shipmentId key is greater that 0.
+4. With a _Array filter_ action I check for the existence of shipmentId's in the body. In this case I check if the length of the shipmentId key is greater than 0.
    1. `length(item()?['shipmentId'])`
       {% image "/assets/images/logicApps-sandbox/37-event-filter.png", "Filter events" %}
-5. From here on the events are going to be transformed and send to the sandbox for validation in a loop. First I get the Bearer token out of the Key Vault. This might also be possible outside of the loop but it increases out changes of having an invalid token.
-6. The JSON payload is parsed because I need to use the shipmentId later. The shipmentId won't be in the Body after the transformation.
+5. From here on the events are transformed and sent to the sandbox for validation in a loop. First I get the Bearer token out of the Key Vault. Getting the token inside the loop might seem inefficient, but doing it outside increases our chances of having an invalid token by the time we process later events.
+6. The JSON payload is parsed because I need to use the shipmentId later which is stripped out during the transformation.
 7. A _XSLT DataMapper action_ performs the transformation. More on this later.
    {% image "/assets/images/logicApps-sandbox/38-event-datamapping-action.png", "DataMapper action" %}
-8. An issue I ran into while using the _DataMapper_ was that it always handled a string with a ISO value as a date time object. So in my case a string with the value `2026-02-23T10:29:36.694588` would be seen as a time in my local timezone and converted back to a UTC string with a time offset.
+8. An issue I ran into while using the Data Mapper was that it automatically converts ISO-formatted strings to datetime objects, even when the schema explicitly defines them as strings. So in my case a string with the value `2026-02-23T10:29:36.694588` would be seen as a time in my local timezone and converted back to a UTC string with a time offset.
 
-   I double checked my schemas, tried casting the values explicitly to a string and even concatenating substrings without success. Since we don't always have the luxury of changing the issue in the source I worked around it with a hacky solution: concatenating `$TZT` to the end of the string and removing it with a _compose action_ after the _data mapping._
+   I double checked my schemas, tried casting the values explicitly to a string and even concatenating substrings without success. Since we don't always have the luxury of changing the issue in the source I worked around it with a hacky solution: concatenating `$TZT` to the end of the string and removing it with a _compose action_ after the _data mapping._ I used $TZT as a marker because it's unlikely to appear naturally in real data.
    {% image "/assets/images/logicApps-sandbox/39-event-replacehack.png", "Replace hack" %}
    1. `replace(string(body('Transform_broker_event_to_TMS')), '$TZT', '')`
 
 9. Last the newly transformed Body is sent to the sandbox.
    {% image "/assets/images/logicApps-sandbox/40-event-post-tms.png", "POST TMS" %}
 
-After triggering some events from sandbox to the *Inbound Event* I got some nice green checkmarks!
-   {% image "/assets/images/logicApps-sandbox/41-event-result.png", "Result event workflow" %}
+After triggering some events from sandbox to the _Inbound Event_ I got some nice green checkmarks!
+{% image "/assets/images/logicApps-sandbox/41-event-result.png", "Result event workflow" %}
 
-Let's start tying some ends and dive into what's going on in the *Data Mapper*!
-#### DataMapper 
-On the Azure plugin tab in VSCode there is a extra section called *Data Mapper*. 
-   
-   {% image "/assets/images/logicApps-sandbox/42-datamapper.png", "Datamapper tab" %}
-   
-When a new map is created, users must first define a *Source* and a *Destination*. This is done by selecting a schema. For my Broker and TMS event payloads I decided to generate a schema with the Parse JSON action and save it in the Artifacts/Schemas directory.
+Now let's look at the Data Mapper in detail!
 
-Once the schemas are selected it's possible to link fields from the source to the target with a drag and drop interface. Transformations are applied by adding functions in between. There are a whole lot of pre-defined functions available and it is also possible to [create your own function](https://learn.microsoft.com/en-us/azure/logic-apps/create-maps-data-transformation-visual-studio-code#create-custom-xml-functions). 
-   {% image "/assets/images/logicApps-sandbox/43-datamapper-overview.png", "Datamapper overview" %}
+#### DataMapper
+
+On the Azure plugin tab in VSCode there is a extra section called Data Mapper.
+
+{% image "/assets/images/logicApps-sandbox/42-datamapper.png", "Datamapper tab" %}
+
+When a new map is created, users must first define a _Source_ and a _Destination_. This is done by selecting a schema. For my Broker and TMS event payloads I decided to generate a schema with the Parse JSON action and save it in the Artifacts/Schemas directory.
+
+Once the schemas are selected it's possible to link fields from the source to the target with a drag and drop interface. Transformations are applied by adding functions in between. There are a whole lot of pre-defined functions available and it is also possible to [create your own function](https://learn.microsoft.com/en-us/azure/logic-apps/create-maps-data-transformation-visual-studio-code#create-custom-xml-functions).
+{% image "/assets/images/logicApps-sandbox/43-datamapper-overview.png", "Datamapper overview", "450,900"%}
 
 As mentioned earlier, the Data Mapper uses XSLT under the hood. Even for JSON! If we look at the generated XSLT in the Maps folder we can see that it uses a json-to-xml() function that is available in XSLT 3.0 and XPATH 3.1.
-```xslt
+
+```xml
 <xsl:variable name="xmlinput" select="json-to-xml(/)" />
 ```
 
 Further in the document values are then referenced with:
-```xslt
+
+```xml
 <string key="external_order_reference">{/*/*[@key='order']/*[@key='reference']}</string>
 ```
 
 It also has a small testing panel that let's users test the output of the mapping immediately. Unfortunately it isn't resizable, but it works well!
 
-   {% image "/assets/images/logicApps-sandbox/44-datamapper-testpanel.png", "Datamapper testpanel" %}
-##### Date strings 
-As mentioned in the walkthrough of the workflow I used a hacky workaround to prevent the date time string from being processed as a date object. This is done by adding a *Concat* function.
+{% image "/assets/images/logicApps-sandbox/44-datamapper-testpanel.png", "Datamapper testpanel" %}
 
-   {% image "/assets/images/logicApps-sandbox/45-datamapper-concat.png", "Datamapper concat" %}
+##### Date strings
+
+As mentioned in the walkthrough of the workflow I used a hacky workaround to prevent the date time string from being processed as a date object. This is done by adding a _Concat_ function.
+
+{% image "/assets/images/logicApps-sandbox/45-datamapper-concat.png", "Datamapper concat" %}
 
 ##### Fixed values
-For the source field I needed to set a fixed value of *BROKER*. I could not see a function or option for this to I chose to add a *To String* function and gave that a fixed value as input.
+
+For the source field I needed to set a fixed value of _BROKER_. I could not see a function or option for this to I chose to add a _To String_ function and gave that a fixed value as input.
 
 {% image "/assets/images/logicApps-sandbox/46-datamapper-tostring.png", "Datamapper to string" %}
-##### Null safe position
-If an order is created or cancelled then it will not have a position in the event data. In this case I want to map data when the position is not null. A *Is Null* function is added followed by a *Logical Not* which inverses the boolean. Basically making it a *Not Null* check. Which is then used in an if statement to map the corresponding fields.
 
-{% image "/assets/images/logicApps-sandbox/47-datamapper-nullsafe.png", "Datamapper nullsafe" %}
-##### Custom key value map function
-To map the values of the *situation.event* field to the corresponding TMS *event_type* I created a custom function because I could not find a value map kind of function and it was not possible to extend the *If Else* function with multiple branches.
+##### Null safe position
+
+If an order is created or cancelled then it will not have a position in the event data. In this case I want to map data when the position is not null. A _Is Null_ function is added followed by a _Logical Not_ which inverses the boolean. Basically making it a _Not Null_ check. Which is then used in an if statement to map the corresponding fields.
+
+{% image "/assets/images/logicApps-sandbox/47-datamapper-nullsafe.png", "Datamapper nullsafe" "450,900"%}
+
+##### Custom key-value map function
+
+To map the values of the _situation.event_ field to the corresponding TMS _event_type_ I created a custom function. This is because the Data Mapper doesn't include a key-value mapping function and the If-Else function only supports single-condition branches.
 
 In the `Artifacts\DataMapper\Extensions\Functions` folder I created a `CustomFunctions.xml` with the following contents:
+
 ```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <customfunctions>
@@ -487,26 +499,29 @@ In the `Artifacts\DataMapper\Extensions\Functions` folder I created a `CustomFun
 </customfunctions>
 ```
 
-Any [stylesheet function](https://www.w3.org/TR/xslt-30/#stylesheet-functions) within the `<customfunctions>` node will be picked up by the *Data Mapper* as a custom function.
+Any [stylesheet function](https://www.w3.org/TR/xslt-30/#stylesheet-functions) within the `<customfunctions>` node will be picked up by the Data Mapper as a custom function.
 
 {% image "/assets/images/logicApps-sandbox/48-datamapper-customfunc.png", "Datamapper customfunc" %}
 
-Also new since XSLT 3.0 is the [map](https://www.w3.org/TR/xslt-30/#map) function which gives us a key and value structure with a couple of features. The most simple one being the `map:get($map, $key)` to get a value by a given key. 
+Also new since XSLT 3.0 is the [map](https://www.w3.org/TR/xslt-30/#map) function which gives us a key and value structure with a couple of features. It allows the shorthand `$map(key)` for accessing values.
 
-In my *event-mapping* above I take in a string parameter called eventType. Then I select the value of a inline call to my value map which uses the parameter as a key to get the value.
+In my _event-mapping_ above I take in a string parameter called eventType. Then I select the value of a inline call to my value map which uses the parameter as a key to get the value.
 
 And there we have it! All of the fields are mapped.
+
 ## Wrapping up
-If you made it this far then hats off to you! This post got *quite lengthy* without even diving much into error handling or deploying the resources to Azure. Nevertheless I still think there are some nice gems here that could be very helpful for anyone looking into Logic Apps. 
 
-To recap we did the following:
-- walk through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox). 
-- overview of the right resources to setup Logic Apps and VSCode
-- built a flow that handled authentication and stored values in *Key Vault* secrets
-- getting, transforming and sending new shipments.
-- handles incoming
-- data transformations with *Liquid* and with the *Data Mapper*
+If you made it this far then hats off to you! This post got _quite lengthy_ without even diving much into error handling or deploying the resources to Azure. Nevertheless I still think there are some nice gems here that could be very helpful for anyone looking into Logic Apps.
 
-All while explaining why and how I use each component along the way. And which challenges I faced along the way.
+To recap, we did the following:
+
+- Walked through the integration processes available in the [integration sandbox](https://github.com/atetz/integration-sandbox).
+- Provided an overview of the right resources to setup Logic Apps and VSCode
+- Built a flow that handled authentication and stored values in _Key Vault_ secrets
+- Retrieved, transformed, and sent new shipments
+- Handled incoming webhook events with validation
+- Transformed data with _Liquid_ and with the Data Mapper
+
+All while explaining why and how I use each component and which challenges I faced along the way!
 
 Thank you for discovering Azure Logic Apps with me! What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/), experiences, or even just a quick hello!
