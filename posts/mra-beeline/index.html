@@ -39,7 +39,7 @@
 <div class="container grid-container">
   <aside id="sidebar" class="flex-container">
     <div id="sidebar-picture">
-      <picture><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><img src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
     </div>
     <div id="sidebar-content">
       <section>
@@ -71,13 +71,13 @@
   <p>While testing out my new Beeline Moto II motorbike navigation, I ran into some compatibility issues with my routes created with MyRouteApp. Namely, losing the turn-by-turn navigation while going off track. My short roadside frustration turned into a deep dive into GPX files and how to integrate the MyRouteApp format with my Beeline. Upon inspecting both files, I noticed a difference in the GPX file structure. Since a GPX is defined in XML, I decided to make a tool in vanilla JavaScript and XSL that will transform the file for me. And since there are other users with the same issue, I thought it would be nice to share my solution and make it available to anyone that can benefit from it. You can find the tool <a href="/utils/myrouteapp-to-beeline" target="_self">here</a></p>
 </details>
 <h3>Intro</h3>
-<p><picture><source type="image/webp" srcset="/img/ZWLl5-t8ig-300.webp 300w"><img src="/img/ZWLl5-t8ig-300.jpeg" alt="Triumph Bonneville T120" class="floatRight" width="300" height="225"></picture>One of my favourite ways to enjoy the French outdoors is by riding my motorbike.
+<p><picture><source type="image/avif" srcset="/img/ZWLl5-t8ig-300.avif 300w"><source type="image/webp" srcset="/img/ZWLl5-t8ig-300.webp 300w"><source type="image/png" srcset="/img/ZWLl5-t8ig-300.png 300w"><img loading="lazy" decoding="async" src="/img/ZWLl5-t8ig-300.jpeg" alt="Triumph Bonneville T120" class="floatRight" width="300" height="225"></picture>One of my favourite ways to enjoy the French outdoors is by riding my motorbike.
 I make it a sport to create a twisty route with nice elevations and new viewpoints that preferably pass a couple of picnic spots along the way. My preferred method was creating a route in <a href="https://www.MyRouteApp.com/en">MyRouteApp</a> and using my QuadLock mounted phone for navigation. And this worked quite well.</p>
 <p>But, I wanted a more minimalistic device in my cockpit and I liked the idea of having my phone in my pocket instead of on my bike in case of an emergency.
 So after some <em>&quot;very deep research&quot;</em> on YouTube and Google, I naturally found (or was influenced towards...) the Beeline Moto II.</p>
 <p>Fast forward to unboxing and using the Beeline. I was <strong>super hyped</strong>. I exported my GPX file from MyRouteApp and hit the road. And all went surprisingly well.</p>
 <h3>Problem</h3>
-<p><picture><source type="image/webp" srcset="/img/Tsuy2KtTBj-200.webp 200w"><img src="/img/Tsuy2KtTBj-200.jpeg" alt="Beeline device without navigation" class="floatLeft" width="200" height="200"></picture>Until.... I hit into a familiar yellow French sign named déviation (a diversion)! As soon as I got off the track, my Beeline showed a white arrow further diving into a black abyss. No roads were visible, no directions, only a white arrow and a dotted line showing how far I was off the track.</p>
+<p><picture><source type="image/avif" srcset="/img/Tsuy2KtTBj-200.avif 200w"><source type="image/webp" srcset="/img/Tsuy2KtTBj-200.webp 200w"><source type="image/png" srcset="/img/Tsuy2KtTBj-200.png 200w"><img loading="lazy" decoding="async" src="/img/Tsuy2KtTBj-200.jpeg" alt="Beeline device without navigation" class="floatLeft" width="200" height="200"></picture>Until.... I hit into a familiar yellow French sign named déviation (a diversion)! As soon as I got off the track, my Beeline showed a white arrow further diving into a black abyss. No roads were visible, no directions, only a white arrow and a dotted line showing how far I was off the track.</p>
 <p><em>What on earth?</em> Why is my newest piece of navigation technology not navigating? So I stopped, grabbed my phone and opened the Beeline app. Skipping a waypoint wasn't an option because I only had 1 waypoint. Hmm... I opened my maps app and after memorizing some villages I got back on track and my turn by turn navigation was restored. Sweet!</p>
 <p>On my way home my inner problem solver was already working. <em>Did I export my file wrong? Did I forget to check a box on importing?</em></p>
 <p>Soon I learned that other users had similar issues combining MyRouteApp and Beeline, and that their forum topics hit a dead end. They noted that their route seemed to be converted to a track, and only had a start- and end-point. I also learned that it was impossible to import a Beeline GPX in the MyRouteApp. I tried a couple of things on the MyRouteApp end without success. Then on the Beeline support page I found an <a href="https://support.beeline.co/en/articles/10570038-importing-and-exporting-GPX-routes">article</a> on importing and exporting a GPX with this note:</p>
@@ -151,11 +151,11 @@ So after some <em>&quot;very deep research&quot;</em> on YouTube and Google, I n
 <p>My first test file was hacked together using some good old copy, paste search and replaces.</p>
 <p><strong>Et voila!</strong> Upon importing my newly created GPX I was greeted by another option: <em>&quot;Points de cheminement uniquem...&quot;</em>.
 Which translates to the &quot;Waypoints only import mode&quot; mentioned by Beeline above.
-<picture><source type="image/webp" srcset="/img/OHr4eRd9D2-250.webp 250w"><img src="/img/OHr4eRd9D2-250.jpeg" alt="Phone screenshot" class="centerImage" width="250" height="541"></picture>
+<picture><source type="image/avif" srcset="/img/OHr4eRd9D2-250.avif 250w"><source type="image/webp" srcset="/img/OHr4eRd9D2-250.webp 250w"><source type="image/png" srcset="/img/OHr4eRd9D2-250.png 250w"><img loading="lazy" decoding="async" src="/img/OHr4eRd9D2-250.jpeg" alt="Phone screenshot" class="centerImage" width="250" height="541"></picture>
 <small>P.S. Pardon my French, I set my phone to French as a part of my language learning process. </small></p>
 <h3>Sound great? There's just one caveat</h3>
 <p>This methods imports the waypoints added in the MyRouteApp but <em>will re-calculate</em> the route in between them. If you want the Beeline to calculate the same or near similar route, I advise you to take an extra 15 min to add waypoints on every main road change. My approach looked like this:</p>
-<p><picture><source type="image/webp" srcset="/img/KWp7yH-sX7-600.webp 600w"><img src="/img/KWp7yH-sX7-600.jpeg" alt="MRA screenshot" class="centerImage" width="600" height="696"></picture></p>
+<p><picture><source type="image/avif" srcset="/img/KWp7yH-sX7-600.avif 600w"><source type="image/webp" srcset="/img/KWp7yH-sX7-600.webp 600w"><img loading="lazy" decoding="async" src="/img/KWp7yH-sX7-600.png" alt="MRA screenshot" class="centerImage" width="600" height="696"></picture></p>
 <h3>Automated solution</h3>
 <p>Obviously I wasn't planning on manually editing GPX files every time I wanted to use one of my routes.
 So I decided to make a tool that will transform the file for me. And since there are other users with the same issue, I thought it would be nice to share my solution and make it available to anyone that can benefit from it. The solution is simple:</p>
