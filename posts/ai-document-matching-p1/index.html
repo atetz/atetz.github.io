@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How reliably can AI assist in document extraction?  Part 1.</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/contact/">Contact</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small>Data integrator<i>, lover of outdoors.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      How reliably can AI assist in document extraction?  Part 1.
+    </h2>
+    <p>May 14, 2026</p>
+</hgroup>
+  <h2>Intro</h2>
+<p>A subject that has been coming up again recently in my network is reliable data extraction from documents. I've been in IT long enough to have been involved with this subject on multiple occasions using different approaches. From having to maintain nightmarish regex expressions to working with consultants that developed templates using a proprietary extraction SDK or RPA solutions. I haven't touched this subject for a while now, but I remember all of these solutions had similar issues.</p>
+<p>The solution was very likely to break when the format changes or when the data in a field didn't exactly follow a pattern. And breaking changes almost certainly meant extra development or consultancy costs. For SME customers these solutions ended up being high-maintenance with minimum flexibility.</p>
+<p>Given the recurrence of the subject I wondered:</p>
+<blockquote>
+How reliably can an LLM based system for document extraction reduce the need for human intervention when the template changes?</blockquote>
+<p>I'm going to try and answer this question in a series of posts.</p>
+<h2>The use case: cross referencing packing lists</h2>
+<p>A medium size e-commerce business wants to automate parts of their three-way matching process. This means cross-referencing the invoice with its corresponding purchase order and goods receipt to make sure all details match. In short: Did we get what we ordered and does the invoice match reality?</p>
+<p>I’m going to focus exclusively on extracting packing list data and structuring it for cross-referencing. In our case, after the incoming goods have been physically checked against the packing list, the document is fed into a <em>scanner</em> for processing downstream. Which will lead to an automated workflow that essentially generates the goods receipt.</p>
+<p>To make things interesting, I’ve set the following requirements for a viable solution:</p>
+<ul>
+<li>Changes in document layout must be handled automatically.</li>
+<li>It must support multiple pages per document.</li>
+<li>It must handle fuzzy input errors. For example a vendor accidentally swapping the SKU and Description columns.</li>
+<li>It should be able to run in a self-hosted environment.*</li>
+</ul>
+<p>Before diving into the technical bits I created some testdata. I'm the owner of <em>ATE Commerce</em> and I work with two vendors <em>Stark Industries Ltd</em> and <em>ACME Corp Europe</em>. Each vendor uses a different packing list template and has a different address format. I worked with the following tests:</p>
+<ul>
+<li>1 page packing list for ACME Corp Europe</li>
+<li>2 page packing list for ACME Corp Europe</li>
+<li>2 page packing list for ACME with some errors</li>
+<li>2 page packing list for Stark Industries Ltd</li>
+</ul>
+<p>I filled out the templates, printed them out and scanned them back to PDF files.</p>
+<p>* I'm aware that the latest and greatest AI vision models can probably one-shot this with 95% accuracy. But not all businesses want or can send their documents to an external AI service for further processing. And I'm curious to find out what the options are in such cases.</p>
+<h2>AI document extraction</h2>
+<p>The first step in this series is making sure that the data I'm going to extract has all the important information I need in the best possible quality. My desk research quickly led me to a project called <a href="https://docling-project.github.io/docling/">docling</a>. And I got it recommended to me by someone in my network which was all the more reason to give it a try!</p>
+<p>Docling is an open source Python library aimed at simplifying document processing. It makes use of specialized AI models for layout analysis and structure recognition. Users can build their own <a href="https://docling-project.github.io/docling/concepts/architecture/">document processing</a> pipelines that transform PDF documents to a <a href="https://docling-project.github.io/docling/concepts/docling_document/">docling document format</a> that can be exported to many formats like markdown and json. This can then be ingested and processed by AI and agentic workflows. And most of this can be done on my 4 year old MacBook. No expensive GPU required!</p>
+<p>The docling documentation contains <a href="https://docling-project.github.io/docling/examples/custom_convert/">nice examples</a> on how to use it. A basic conversion, adapted to one of my template pdf's looks like this:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>document_converter <span class="token keyword">import</span> DocumentConverter
+
+data_folder <span class="token operator">=</span> Path<span class="token punctuation">(</span>__file__<span class="token punctuation">)</span><span class="token punctuation">.</span>parent <span class="token operator">/</span> <span class="token string">"assets"</span>
+source <span class="token operator">=</span> data_folder <span class="token operator">/</span> <span class="token string">"po-33959-singlepage-ups-300dpi.pdf"</span>
+
+converter <span class="token operator">=</span> DocumentConverter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+result <span class="token operator">=</span> converter<span class="token punctuation">.</span>convert<span class="token punctuation">(</span>source<span class="token punctuation">)</span>
+
+<span class="token comment"># Print Markdown to stdout.</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>document<span class="token punctuation">.</span>export_to_markdown<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<p><small>Source: https://docling-project.github.io/docling/examples/minimal/</small></p>
+<p>And straight off the bat it produced a result that was quite good! Nearly all the data was read and processed nicely. It missed the date and the shipper and consignee information got merged into 1 chapter.</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-acmeResults" style="grid-template-columns: repeat(3, 1fr);">                        <a href="/img/xFByCOVpZL-1628.jpeg" data-pswp-width="1628" data-pswp-height="1026" target="_blank" style="text-decoration: none">          <img src="/img/xFByCOVpZL-500.jpeg" alt="po-33959-address-comparison">        </a>            <a href="/img/MKg5aj7Lnq-1597.jpeg" data-pswp-width="1597" data-pswp-height="993" target="_blank" style="text-decoration: none">          <img src="/img/MKg5aj7Lnq-500.jpeg" alt="po-33959-details-comparison">        </a>            <a href="/img/VqS5n3QuPP-720.jpeg" data-pswp-width="720" data-pswp-height="1007" target="_blank" style="text-decoration: none">          <img src="/img/VqS5n3QuPP-500.jpeg" alt="po-33959-scan-complete">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-acmeResults',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><br>
+The quality remained the same when I tested out the same template with multiple pages.<p></p>
+<p>But the second PDF template turned out to be less successful.</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-starkResults" style="grid-template-columns: repeat(3, 1fr);">                        <a href="/img/S4qVoKf75Z-1067.jpeg" data-pswp-width="1067" data-pswp-height="978" target="_blank" style="text-decoration: none">          <img src="/img/S4qVoKf75Z-500.jpeg" alt="po-40085-address-comparison">        </a>            <a href="/img/q6OmnIElpV-1962.jpeg" data-pswp-width="1962" data-pswp-height="899" target="_blank" style="text-decoration: none">          <img src="/img/q6OmnIElpV-500.jpeg" alt="po-40085-lines-comparison">        </a>            <a href="/img/Aq3_nCIzy2-1040.jpeg" data-pswp-width="1040" data-pswp-height="726" target="_blank" style="text-decoration: none">          <img src="/img/Aq3_nCIzy2-500.jpeg" alt="po-40085-shippinginf-comparison">        </a>            <a href="/img/jfus971hdD-1930.jpeg" data-pswp-width="1930" data-pswp-height="966" target="_blank" style="text-decoration: none">          <img src="/img/jfus971hdD-500.jpeg" alt="po-40085-contsheet-comparison">        </a>            <a href="/img/jva3P7nD4C-720.jpeg" data-pswp-width="720" data-pswp-height="900" target="_blank" style="text-decoration: none">          <img src="/img/jva3P7nD4C-500.jpeg" alt="po-40085-scan-complete">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-starkResults',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>The biggest issues being that I'm missing the no. of packages for the first row and that the goods description is duplicated to country column. At the same time, this is still not bad for the defaults. And this data could still be used to pre-fill and verify further downstream in a data entry/validation phase.</p>
+<p>My second template looks a bit more difficult and has some nested/merged cells. So I suspect it had something to do with my layout. Thankfully docling generates a <a href="https://docling-project.github.io/docling/concepts/confidence_scores/#purpose">confidence score</a> in the result that contains information on how well the conversion was performed. I can use this to better understand the areas of improvement.</p>
+<p>I extended my code with this snippet:</p>
+<pre class="language-python"><code class="language-python"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+result <span class="token operator">=</span> converter<span class="token punctuation">.</span>convert<span class="token punctuation">(</span>source<span class="token punctuation">)</span>
+
+confidence <span class="token operator">=</span> result<span class="token punctuation">.</span>confidence
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Layout score: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>layout_score<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"OCR score: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>ocr_score<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Mean grade: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>mean_grade<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Low grade: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>low_grade<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+<span class="token comment"># Print Markdown to stdout.</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span></code></pre>
+<ul>
+<li><code>layout_score</code>: indicates the overall quality of document element recognition</li>
+<li><code>ocr_score</code>: indicates the quality of OCR-extracted content</li>
+</ul>
+<p>Grades provide overall document quality assessment:</p>
+<ul>
+<li><code>mean_grade</code>: Average of all component scores (table, layout, parsing &amp; ocr)</li>
+<li><code>low_grade</code>: Highlights worst-performing areas</li>
+</ul>
+<p>After running a couple of tests, these were my results:</p>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Layout Score</th>
+<th>OCR Score</th>
+<th>Mean Grade</th>
+<th>Low Grade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACME</td>
+<td>0.8042</td>
+<td>1.0000</td>
+<td>EXCELLENT</td>
+<td>GOOD</td>
+</tr>
+<tr>
+<td>Stark</td>
+<td>0.6519</td>
+<td>0.9642</td>
+<td>GOOD</td>
+<td>FAIR</td>
+</tr>
+</tbody>
+</table>
+<p>My second template layout falls just in the <em>fair</em> category. However, these scores are a <em>confidence</em> score and do not necessarily represent the actual <em>output quality</em>. A complex document layout (mixed tables, forms, varied text regions) will always produce a lower confidence score even if the model is getting things mostly right. So this grade could be used to identify documents that need a manual review.</p>
+<p>Upon searching how to increase the quality of the output I came across <a href="https://github.dosu.com/docling-project/docling?utm_source=github&amp;utm_medium=bot-comment&amp;utm_campaign=github-comment-footer-20260415&amp;utm_content=knowledge-infrastructure-learn-repo&amp;utm_term=docling-project%2Fdocling">Dosu</a>, Docling's AI documentation chatbot. I was quite impressed in its answers. In my experience it often gives an answer with links to the sources where I can read further details and validate it. Only occasionally it recommended a default setting.</p>
+<p>It gave me some useful information and tips:</p>
+<ul>
+<li>If an element (picture, table etc.) is missing then this is likely to do with the layout model not picking it up correctly. The layout model operates on the rendered page image. Increasing the image resolution for layout detection can improve the detection of smaller layout elements.</li>
+<li>If a table is correctly detected but there are empty cells then this is most likely to do with:
+<ul>
+<li>The OCR engine</li>
+<li>The default <a href="https://github.com/docling-project/docling/blob/main/docling/datamodel/pipeline_options.py">cell-matching step which can break a table output</a> if PDF cells are merged across table columns.</li>
+</ul>
+</li>
+</ul>
+<p>Based on these tips I tested the following PdfPipelineOptions 1 by 1:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>datamodel<span class="token punctuation">.</span>base_models <span class="token keyword">import</span> InputFormat
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>datamodel<span class="token punctuation">.</span>pipeline_options <span class="token keyword">import</span> <span class="token punctuation">(</span>
+    PdfPipelineOptions<span class="token punctuation">,</span>
+    TableFormerMode<span class="token punctuation">,</span>
+    TableStructureOptions<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>document_converter <span class="token keyword">import</span> DocumentConverter<span class="token punctuation">,</span> PdfFormatOption
+
+data_folder <span class="token operator">=</span> Path<span class="token punctuation">(</span>__file__<span class="token punctuation">)</span><span class="token punctuation">.</span>parent <span class="token operator">/</span> <span class="token string">"assets"</span>
+<span class="token comment"># source = data_folder / "PO-26076-multipage-ups-300DPI.pdf"</span>
+source <span class="token operator">=</span> data_folder <span class="token operator">/</span> <span class="token string">"PO-40085-fedex-300dpi.pdf"</span>
+
+pipeline_options <span class="token operator">=</span> PdfPipelineOptions<span class="token punctuation">(</span>
+    images_scale<span class="token operator">=</span><span class="token number">2.0</span><span class="token punctuation">,</span>
+    do_table_structure<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>
+    table_structure_options<span class="token operator">=</span>TableStructureOptions<span class="token punctuation">(</span>
+        mode<span class="token operator">=</span>TableFormerMode<span class="token punctuation">.</span>ACCURATE<span class="token punctuation">,</span> do_cell_matching<span class="token operator">=</span><span class="token boolean">False</span>
+    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+
+converter <span class="token operator">=</span> DocumentConverter<span class="token punctuation">(</span>
+    format_options<span class="token operator">=</span><span class="token punctuation">{</span>
+        InputFormat<span class="token punctuation">.</span>PDF<span class="token punctuation">:</span> PdfFormatOption<span class="token punctuation">(</span>
+            pipeline_options<span class="token operator">=</span>pipeline_options<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+result <span class="token operator">=</span> converter<span class="token punctuation">.</span>convert<span class="token punctuation">(</span>source<span class="token punctuation">)</span></code></pre>
+<p>None of these settings really made an impact. The <em>do_cell_matching</em> option even seemed to hallucinate an extra row with 1 value.</p>
+<p>On to changing OCR engines!</p>
+<p>The documentation has a <a href="https://docling-project.github.io/docling/examples/custom_convert/">great example</a> for exactly this. And given that you add the necessary Python packages to your project, switching and testing them out with the examples is quite simple. I proceeded to test out EasyOCR, Tesseract and RapidOCR and eventually settled for a custom RapidOCR setup. The main reasons being that EasyOCR and Tesseract did not output the address and line items right which meant that postprocessing would be a lot more difficult. I also discovered that my default OCR engine was the Mac-native version (OCRMac). While it performed really well, keeping this would mean that my solution would not be portable to other platforms or able to run in a container.</p>
+<p>To get RapidOCR running nicely I made use of the <a href="https://docling-project.github.io/docling/examples/rapidocr_with_custom_models/">example</a> that uses custom models. The default models somehow removed a lot of spaces and weren't the latest models. I made one change to the recognition model because PaddleOCR (the underlying model) <a href="https://www.paddleocr.ai/main/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html">rated</a> that one higher on english text. I also left out the downloading part and pointed my code to a local folder with the models that I got from <a href="https://www.modelscope.cn/models/RapidAI/RapidOCR/tree/v3.8.0/onnx">modelscope</a>. This is what I ended up with:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">import</span> logging
+<span class="token keyword">import</span> os
+<span class="token keyword">import</span> time
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>datamodel<span class="token punctuation">.</span>base_models <span class="token keyword">import</span> InputFormat
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>datamodel<span class="token punctuation">.</span>document <span class="token keyword">import</span> ConversionResult
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>datamodel<span class="token punctuation">.</span>pipeline_options <span class="token keyword">import</span> PdfPipelineOptions<span class="token punctuation">,</span> RapidOcrOptions
+<span class="token keyword">from</span> docling<span class="token punctuation">.</span>document_converter <span class="token keyword">import</span> DocumentConverter<span class="token punctuation">,</span> PdfFormatOption
+
+logger <span class="token operator">=</span> logging<span class="token punctuation">.</span>getLogger<span class="token punctuation">(</span>__name__<span class="token punctuation">)</span>
+
+MODELS_BASE_PATH <span class="token operator">=</span> <span class="token string">"/my/path/to/DoclingModels"</span>
+
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    logging<span class="token punctuation">.</span>basicConfig<span class="token punctuation">(</span>level<span class="token operator">=</span>logging<span class="token punctuation">.</span>INFO<span class="token punctuation">)</span>
+    start_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    data_folder <span class="token operator">=</span> Path<span class="token punctuation">(</span>__file__<span class="token punctuation">)</span><span class="token punctuation">.</span>parent <span class="token operator">/</span> <span class="token string">"assets"</span>
+    source <span class="token operator">=</span> data_folder <span class="token operator">/</span> <span class="token string">"PO-40085-fedex-300dpi.pdf"</span>
+
+    <span class="token comment"># Setup RapidOcrOptions for English detection</span>
+    det_model_path <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>join<span class="token punctuation">(</span>
+        MODELS_BASE_PATH<span class="token punctuation">,</span> <span class="token string">"onnx"</span><span class="token punctuation">,</span> <span class="token string">"PP-OCRv5"</span><span class="token punctuation">,</span> <span class="token string">"det"</span><span class="token punctuation">,</span> <span class="token string">"ch_PP-OCRv5_det_server.onnx"</span>
+    <span class="token punctuation">)</span>
+    rec_model_path <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>join<span class="token punctuation">(</span>
+        MODELS_BASE_PATH<span class="token punctuation">,</span> <span class="token string">"onnx"</span><span class="token punctuation">,</span> <span class="token string">"PP-OCRv5"</span><span class="token punctuation">,</span> <span class="token string">"rec"</span><span class="token punctuation">,</span> <span class="token string">"ch_PP-OCRv5_rec_mobile.onnx"</span>
+    <span class="token punctuation">)</span>
+    cls_model_path <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>join<span class="token punctuation">(</span>
+        MODELS_BASE_PATH<span class="token punctuation">,</span>
+        <span class="token string">"onnx"</span><span class="token punctuation">,</span>
+        <span class="token string">"PP-OCRv4"</span><span class="token punctuation">,</span>
+        <span class="token string">"cls"</span><span class="token punctuation">,</span>
+        <span class="token string">"ch_ppocr_mobile_v2.0_cls_mobile.onnx"</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    ocr_options <span class="token operator">=</span> RapidOcrOptions<span class="token punctuation">(</span>
+        det_model_path<span class="token operator">=</span>det_model_path<span class="token punctuation">,</span>
+        rec_model_path<span class="token operator">=</span>rec_model_path<span class="token punctuation">,</span>
+        cls_model_path<span class="token operator">=</span>cls_model_path<span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+
+    pipeline_options <span class="token operator">=</span> PdfPipelineOptions<span class="token punctuation">(</span>
+        ocr_options<span class="token operator">=</span>ocr_options<span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+
+    <span class="token comment"># Convert the document</span>
+    converter <span class="token operator">=</span> DocumentConverter<span class="token punctuation">(</span>
+        format_options<span class="token operator">=</span><span class="token punctuation">{</span>
+            InputFormat<span class="token punctuation">.</span>PDF<span class="token punctuation">:</span> PdfFormatOption<span class="token punctuation">(</span>
+                pipeline_options<span class="token operator">=</span>pipeline_options<span class="token punctuation">,</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+
+    conversion_result<span class="token punctuation">:</span> ConversionResult <span class="token operator">=</span> converter<span class="token punctuation">.</span>convert<span class="token punctuation">(</span>source<span class="token operator">=</span>source<span class="token punctuation">)</span>
+
+    confidence <span class="token operator">=</span> conversion_result<span class="token punctuation">.</span>confidence
+    logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Layout score: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>layout_score<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+    logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"OCR score: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>ocr_score<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+    logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Mean grade: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>mean_grade<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+    logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Low grade: </span><span class="token interpolation"><span class="token punctuation">{</span>confidence<span class="token punctuation">.</span>low_grade<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+    doc <span class="token operator">=</span> conversion_result<span class="token punctuation">.</span>document
+    md <span class="token operator">=</span> doc<span class="token punctuation">.</span>export_to_markdown<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>md<span class="token punctuation">)</span>
+
+    end_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> start_time
+    logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Document converted in </span><span class="token interpolation"><span class="token punctuation">{</span>end_time<span class="token punctuation">:</span><span class="token format-spec">.2f</span><span class="token punctuation">}</span></span><span class="token string"> seconds."</span></span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>This resulted in the following scores:</p>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Layout Score</th>
+<th>OCR Score</th>
+<th>Mean Grade</th>
+<th>Low Grade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACME</td>
+<td>0.7771</td>
+<td>0.9826</td>
+<td>GOOD</td>
+<td>FAIR</td>
+</tr>
+<tr>
+<td>Stark</td>
+<td>0.6566</td>
+<td>0.9746</td>
+<td>GOOD</td>
+<td>FAIR</td>
+</tr>
+</tbody>
+</table>
+<p>The Stark template got a small bump up while the ACME template dropped a bit. At first sight I would say it's close enough to the original OCRMac results, but not as good.</p>
+<p>Luckily the markdown output tells a slightly different story. For the ACME template there's now finally a date! And there is a clear difference in the shipping and consignee information. It now follows a left to right pattern of the two tables.</p>
+<pre><code>## SHIPPER
+CONSIGNEE
+TAX ID/VAT: NL2398437656
+TAX ID/VAT: FR1234567890
+...
+</code></pre>
+<p>Previously the shipper and consignee were output as separate sections followed by eachother.</p>
+<pre><code>## SHIPPER
+
+TAX ID/VAT: NL2398437656
+
+CONTACT:
+
+Willy E Coyote
+
+... rest of shipper details
+
+CONSIGNEE
+
+TAX ID/VAT: FR1234567890
+
+CONTACT: Adam Tetz
+
+</code></pre>
+<p>It also removes a space after a colon sometimes. This looks easily interpretable so no new problems here.</p>
+<p>In the Stark template all the table values are now complete and the table data is 99.9% correct. It only misread one sku with<code>RYD-4918-HI</code> as <code>RYD-4918-Hil</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Packages No. of</th>
+<th>No.of Units</th>
+<th>Net Weight (LBS /KGS)</th>
+<th>Measure Unit of</th>
+<th>Description of Goods (Part #, Serial #, etc.)</th>
+<th>Country/Terr. of MFR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5</td>
+<td>940</td>
+<td>0.2</td>
+<td>EA</td>
+<td>RYD-4918-Hil Deluxe Jacket</td>
+<td>CN</td>
+</tr>
+</tbody>
+</table>
+<p>This model also seemed to prioritise the horizontal position in the same column over the vertical position of the text. So <em>No. of Packages.</em> got detected as <em>Packages No. of.</em> because that column has the text aligned to center.</p>
+<p>Overall great! RapidOCR solved my original problems with the missing date, column data and duplicated column. So I'll accept that single typo!</p>
+<h2>What's next ?</h2>
+<p>By testing different settings with docling I now have a solution that extracts the information I need from my templates with a reasonable high quality. All the important data is there but it still lacks a proper structure. To embed this into an integrated workflow I would still have to parse the formats individually.</p>
+<p>Luckily for me, this is a task that LLMs are really good at! In the next part I'm going to explore how an LLM can take the docling output and produce something that has a unified structure that I can use further downstream.</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container"><small>© Adam Tetz 2025</small></div>
+    </footer>
+  </body>
+</html>
