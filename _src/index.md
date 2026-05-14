@@ -23,7 +23,7 @@ I'm not tied to a single tool and leverage Fluxygen, n8n or AWS & Azure services
 
 🌍 **Adapting to La Vie Française**
 
-Having emigrated to France at the end of 2024, I'm adapting to my living my life in Burgundy and currently learning French (A2 and counting!).
+Having emigrated to France at the end of 2024, I'm adapting to living my life in Burgundy and currently learning French (A2 and counting!).
 
 ⛰️ **Outdoors**
 
