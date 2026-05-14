@@ -172,4 +172,8 @@ export default function (eleventyConfig) {
     const result = withTitle ? `${title}${button}` : button;
     return result.replace(/(\r\n|\n|\r)/gm, "");
   });
+  eleventyConfig.addShortcode(
+    "currentYear",
+    () => `${new Date().getFullYear()}`,
+  );
 }
