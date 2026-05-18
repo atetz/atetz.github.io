@@ -136,7 +136,7 @@ h1 {
   direction: rtl;
 }
 
-#contactButton {
+.contactButton {
   text-align: center;
 }
 
