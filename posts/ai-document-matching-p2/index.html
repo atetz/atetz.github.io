@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How reliably can AI assist in document extraction?  Part 2.</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/about/">About</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small><i>Freelance integration consultant living in Burgundy, France.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      How reliably can AI assist in document extraction?  Part 2.
+    </h2>
+    <p>May 26, 2026</p>
+</hgroup>
+  <p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-teaser" style="grid-template-columns: repeat(1, 1fr);">                        <a href="/img/BPT1nZC5xx-1342.jpeg" data-pswp-width="1342" data-pswp-height="982" target="_blank" style="text-decoration: none">          <img src="/img/BPT1nZC5xx-1024.jpeg" alt="image of pdf versus json output">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-teaser',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>Armed with the extracted packing list data from part one I can now look at how this can be further used to eventually automate the cross referencing. Did you miss the first part? Don't worry, you can read it here: link.</p>
+<p>Let's unpack this a bit (pun intended!). I can now reliably extract the data of the scanned PDFs to markdown files but those files have a different layout and content depending on the PDF format. And the last thing I want to do is build something that contains logic tied to an individual format. Like mentioned in the previous part, this is likely to break when the format changes and needs extra maintenance.</p>
+<p>Instead I want to leverage the power of a large language model (LLM) and offload the format changes to it. Why? The biggest reason being that LLMs have semantic understanding. It can understand the complete markdown file as a whole regardless of some minor issues in the layout. So I expect it to handle my requirements of handling format changes and fuzzy input errors.</p>
+<h3>Defining the output structure</h3>
+<p>Another thing LLMs are good at is providing structured output. And since I want to use the extracted document further downstream, be it for a human-in-the-loop system or for a draft in an ERP system, I'll first create a <a href="https://www.enterpriseintegrationpatterns.com/patterns/messaging/CanonicalDataModel.html"><em>Canonical Data Model</em> </a>. A Canonical Data Model is a way of saying that we'll use a shared data model that is tied to the domain entity instead of a particular application format. It's a pattern used in messaging that really pays off when the number of applications grow. I like the idea of anything that I might use in the pipeline to produce or consume the same format.</p>
+<p>My tool of choice for this is <a href="https://pydantic.dev/">Pydantic</a>. It has everything I need, from data validation to exporting json models if I decide to use the model outside of Python. This is what my model looks like:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">import</span> datetime
+<span class="token keyword">from</span> typing <span class="token keyword">import</span> Optional
+
+<span class="token keyword">from</span> pydantic <span class="token keyword">import</span> BaseModel
+
+
+<span class="token keyword">class</span> <span class="token class-name">Address</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    address<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+    postal_code<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+    city<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+    country<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">Party</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    company_name<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+    contact<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+    email<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span>
+    address<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span>Address<span class="token punctuation">]</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">PackingLineItem</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    sku<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    description<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    quantity<span class="token punctuation">:</span> <span class="token builtin">int</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">PackingList</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    po_number<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    pl_date<span class="token punctuation">:</span> datetime<span class="token punctuation">.</span>date
+    vendor<span class="token punctuation">:</span> Party
+    ship_to<span class="token punctuation">:</span> Party
+    line_items<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span>PackingLineItem<span class="token punctuation">]</span>
+    notes<span class="token punctuation">:</span> Optional<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span></code></pre>
+<p>I added the most important information and made the address information optional.</p>
+<h3>Working with a local LLM</h3>
+<p>Where to start? What model to choose? This is quite the rabbit hole on its own. The subject is absolutely flooded all over the internet. My desk research ended up being an approach of asking Claude / Gemini, googling, scanning a couple of subreddits like r/ollama and r/LocalLLaMA.</p>
+<p>While searching for local LLM tooling that works on my Mac M1 Pro, I first landed on <a href="https://ollama.com/">Ollama</a> and then tinkered around with the examples in the <a href="https://docs.ollama.com/">docs</a>. I find they have a simple API, CLI and Python library so I stuck with it.</p>
+<h4>Cherry picking models</h4>
+<p>Quickly I had a small test running and cherry picked some models. With Ollama it's very easy to pull a model using the CLI e.g. <code>ollama pull llama3.1:latest</code> and then reference it in Python using the library. I added the following function to my docling testfile:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">import</span> logging
+<span class="token keyword">import</span> os
+<span class="token keyword">import</span> time
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token comment"># docling imports</span>
+
+<span class="token keyword">from</span> ollama <span class="token keyword">import</span> Client
+<span class="token keyword">from</span> pydantic <span class="token keyword">import</span> ValidationError
+
+logger <span class="token operator">=</span> logging<span class="token punctuation">.</span>getLogger<span class="token punctuation">(</span>__name__<span class="token punctuation">)</span>
+
+MODELS_BASE_PATH <span class="token operator">=</span> <span class="token string">"/my/path/to/DoclingModels"</span>
+OLLAMA_HOST <span class="token operator">=</span> <span class="token string">"http://localhost:11434"</span>
+MODEL <span class="token operator">=</span> <span class="token string">"llama3.1:latest"</span>
+SYSTEM_PROMPT <span class="token operator">=</span> <span class="token string">"Prompt is a markdown file from OCR. Return a single json file with data that complies with the schema."</span>
+
+
+<span class="token keyword">def</span> <span class="token function">generate_model_response</span><span class="token punctuation">(</span>client<span class="token punctuation">:</span> Client<span class="token punctuation">,</span> document<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> PackingList <span class="token operator">|</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    response <span class="token operator">=</span> client<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>
+        model<span class="token operator">=</span>MODEL<span class="token punctuation">,</span>
+        system<span class="token operator">=</span>SYSTEM_PROMPT<span class="token punctuation">,</span>
+        prompt<span class="token operator">=</span>document<span class="token punctuation">,</span>
+        <span class="token builtin">format</span><span class="token operator">=</span>PackingList<span class="token punctuation">.</span>model_json_schema<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    raw <span class="token operator">=</span> response<span class="token punctuation">.</span>response
+    <span class="token keyword">if</span> <span class="token keyword">not</span> raw<span class="token punctuation">:</span>
+        logger<span class="token punctuation">.</span>warning<span class="token punctuation">(</span><span class="token string">"Empty response from model"</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">None</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> PackingList<span class="token punctuation">.</span>model_validate_json<span class="token punctuation">(</span>raw<span class="token punctuation">)</span>
+    <span class="token keyword">except</span> ValidationError <span class="token keyword">as</span> exc<span class="token punctuation">:</span>
+        logger<span class="token punctuation">.</span>error<span class="token punctuation">(</span><span class="token string">"Validation failed: %s"</span><span class="token punctuation">,</span> exc<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">None</span>
+
+
+<span class="token comment"># docling pipeline function</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    logging<span class="token punctuation">.</span>basicConfig<span class="token punctuation">(</span>level<span class="token operator">=</span>logging<span class="token punctuation">.</span>INFO<span class="token punctuation">)</span>
+    start_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    data_folder <span class="token operator">=</span> Path<span class="token punctuation">(</span>__file__<span class="token punctuation">)</span><span class="token punctuation">.</span>parent <span class="token operator">/</span> <span class="token string">"assets"</span>
+    source <span class="token operator">=</span> data_folder <span class="token operator">/</span> <span class="token string">"PO-40085-fedex-300dpi.pdf"</span>
+
+    md <span class="token operator">=</span> convert_pdf_to_markdown<span class="token punctuation">(</span>source<span class="token punctuation">)</span>
+
+	client <span class="token operator">=</span> Client<span class="token punctuation">(</span>host<span class="token operator">=</span>OLLAMA_HOST<span class="token punctuation">)</span>
+    model_response <span class="token operator">=</span> generate_model_response<span class="token punctuation">(</span>client<span class="token punctuation">,</span> md<span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>model_response<span class="token punctuation">.</span>model_dump_json<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    end_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> start_time
+    logger<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Document converted in </span><span class="token interpolation"><span class="token punctuation">{</span>end_time<span class="token punctuation">:</span><span class="token format-spec">.2f</span><span class="token punctuation">}</span></span><span class="token string"> seconds."</span></span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+<p>In the example above the Ollama Client is used with the following parameters:</p>
+<ul>
+<li>model - the model I want to use</li>
+<li>system - my system prompt</li>
+<li>prompt - the markdown file to parse</li>
+<li>format - The output format I want to enforce. In this case the JSON schema of my PackingList model.</li>
+</ul>
+<p>The <code>return PackingList.model_validate_json(raw)</code> is there to parse the LLM output to my model and validate it. If this fails then I want it logged and None returned.</p>
+<p>And it produced the following json in around 39 seconds:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"po_number"</span><span class="token operator">:</span> <span class="token string">"PO-40085"</span><span class="token punctuation">,</span>
+  <span class="token property">"pl_date"</span><span class="token operator">:</span> <span class="token string">"2026-03-07"</span><span class="token punctuation">,</span>
+  <span class="token property">"vendor"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"company_name"</span><span class="token operator">:</span> <span class="token string">"Stark Industries Ltd"</span><span class="token punctuation">,</span>
+    <span class="token property">"contact"</span><span class="token operator">:</span> <span class="token string">"Tony Stark"</span><span class="token punctuation">,</span>
+    <span class="token property">"email"</span><span class="token operator">:</span> <span class="token string">"tony@starkindustries.fakedomail"</span><span class="token punctuation">,</span>
+    <span class="token property">"address"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"address"</span><span class="token operator">:</span> <span class="token string">"8 Iron Street"</span><span class="token punctuation">,</span>
+      <span class="token property">"postal_code"</span><span class="token operator">:</span> <span class="token string">"D081X2Y"</span><span class="token punctuation">,</span>
+      <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">"Dublin 8"</span><span class="token punctuation">,</span>
+      <span class="token property">"country"</span><span class="token operator">:</span> <span class="token string">"Ireland"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"ship_to"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"company_name"</span><span class="token operator">:</span> <span class="token string">"ATE Commerce"</span><span class="token punctuation">,</span>
+    <span class="token property">"contact"</span><span class="token operator">:</span> <span class="token string">"Adam Tetz"</span><span class="token punctuation">,</span>
+    <span class="token property">"email"</span><span class="token operator">:</span> <span class="token string">"ate@commerce.fakedomail"</span><span class="token punctuation">,</span>
+    <span class="token property">"address"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"address"</span><span class="token operator">:</span> <span class="token string">"21 Rue Industriel"</span><span class="token punctuation">,</span>
+      <span class="token property">"postal_code"</span><span class="token operator">:</span> <span class="token string">"21000 DIJON"</span><span class="token punctuation">,</span>
+      <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span>
+      <span class="token property">"country"</span><span class="token operator">:</span> <span class="token string">"France"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"line_items"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"NJJ-6054-RM Modern Vacuum Cleaner"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Modern Vacuum Cleaner"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">34</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"VRD-9027-NG Vintage Headphones"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Vintage Headphones"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">330</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"JEX-2620-FB Professional Mouse"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Professional Mouse"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">236</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"YEX-9548-VJ Portable Smartwatch"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Portable Smartwatch"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">786</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"MTR-2076-XK Classic Keyboard"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Classic Keyboard"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">987</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-Hil Deluxe Jacket"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Deluxe Jacket"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">940</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"notes"</span><span class="token operator">:</span> <span class="token string">"Place in dry location - keep away from rain."</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Not that bad at all! But also not good enough. My SKU contained an item description and my shipping address was missing a city because it got attached to postal code.</p>
+<p>Fuelled by enthusiasm I went on fine-tuning the prompt a bit more and swapping out the models. The results varied, some validation errors and some missing data. I found mistral-small to produce the best output but it also took around 100 seconds to complete:</p>
+<pre class="language-python"><code class="language-python"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+MODEL <span class="token operator">=</span> <span class="token string">"mistral-small:latest"</span>
+SYSTEM_PROMPT <span class="token operator">=</span> <span class="token triple-quoted-string string">"""
+You are a data mapping specialist. Your single job is to read messy, raw OCR text in Markdown format and normalize it into the requested structure.
+
+Apply these transformation rules to the data mapping:
+
+1. LINE ITEM AGGREGATION: Look across the entire document. If you find multiple separate tables or fragmented data aggregate and merge them into a single, flat list.
+2. SKU ISOLATION: Explicitly split SKUs from their text descriptions. If the OCR has bound them together (e.g., 'A109-Blue Widget' or 'Widget Blue (A109)'), strip out the code and map it strictly to the SKU field, leaving only the clean name in the description field.
+3. GEOGRAPHIC SPLITTING: Look at address rows. Parse and extract the city/place name from the numerical postal or ZIP code. Do not leave them combined in a single string.
+4. OCR RESILIENCE: Contextually heal obvious typos caused by character misreads (e.g., if a serial code contains an 'l' instead of a '1' in a numeric column, or broken table markdown pipes, fix it automatically during mapping)."""</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span></code></pre>
+<p>resulting in:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"po_number"</span><span class="token operator">:</span> <span class="token string">"PO-40085"</span><span class="token punctuation">,</span>
+  <span class="token property">"pl_date"</span><span class="token operator">:</span> <span class="token string">"2026-03-07"</span><span class="token punctuation">,</span>
+  <span class="token property">"vendor"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"company_name"</span><span class="token operator">:</span> <span class="token string">"Stark Industries Ltd"</span><span class="token punctuation">,</span>
+    <span class="token property">"contact"</span><span class="token operator">:</span> <span class="token string">"Tony Stark"</span><span class="token punctuation">,</span>
+    <span class="token property">"email"</span><span class="token operator">:</span> <span class="token string">"tony@starkindustries.fakedomail"</span><span class="token punctuation">,</span>
+    <span class="token property">"address"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"address"</span><span class="token operator">:</span> <span class="token string">"8 Iron Street"</span><span class="token punctuation">,</span>
+      <span class="token property">"postal_code"</span><span class="token operator">:</span> <span class="token string">"D081X2Y"</span><span class="token punctuation">,</span>
+      <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">"Dublin 8"</span><span class="token punctuation">,</span>
+      <span class="token property">"country"</span><span class="token operator">:</span> <span class="token string">"Ireland"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"ship_to"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"company_name"</span><span class="token operator">:</span> <span class="token string">"ATE Commerce"</span><span class="token punctuation">,</span>
+    <span class="token property">"contact"</span><span class="token operator">:</span> <span class="token string">"Adam Tetz"</span><span class="token punctuation">,</span>
+    <span class="token property">"email"</span><span class="token operator">:</span> <span class="token string">"ate@commerce.fakedomail"</span><span class="token punctuation">,</span>
+    <span class="token property">"address"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"address"</span><span class="token operator">:</span> <span class="token string">"21 Rue Industriel"</span><span class="token punctuation">,</span>
+      <span class="token property">"postal_code"</span><span class="token operator">:</span> <span class="token string">"21000"</span><span class="token punctuation">,</span>
+      <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">"DIJON"</span><span class="token punctuation">,</span>
+      <span class="token property">"country"</span><span class="token operator">:</span> <span class="token string">"France"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"line_items"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"NJJ-6054-RM"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Modern Vacuum Cleaner"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">34</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"VRD-9027-NG"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Vintage Headphones"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">330</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"JEX-2620-FB"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Professional Mouse"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">236</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"YEX-9548-VJ"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Portable Smartwatch"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">786</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"MTR-2076-XK"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Classic Keyboard"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">987</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span> <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-Hil"</span><span class="token punctuation">,</span> <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Deluxe Jacket"</span><span class="token punctuation">,</span> <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">940</span> <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"notes"</span><span class="token operator">:</span> <span class="token string">"Place in dry location-keep away from rain"</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Nearly perfect! The only mistake in the output was the misread SKU that was already in the markdown.</p>
+<h3>Missing something more systematic</h3>
+<p>Then it dawned on me that I had gotten a bit distracted by my shiny new toy and wasn't really being systematic. I had found something that worked. But was there more? Surely there is some research available on this subject?</p>
+<p>So I went on searching for relevant work on google scholar and I found a very interesting <a href="https://arxiv.org/pdf/2602.14743">article</a> describing a benchmark called LLMStructBench for evaluating LLMs on extracting structured data. While this research focused on extracting data from text like e-mails or service requests, I still found some findings valuable and applicable to my use case:</p>
+<ul>
+<li>Prompting strategy weighs more than the model size. The size of the model helps in value accuracy, but from a certain point the gains become marginal.</li>
+<li>The best performing prompting strategies include a <em>JSON schema</em> and <em>JSON example</em> in the <em>system prompt</em>.</li>
+<li>Enforcing the <em>format</em> is the safest choice for ensuring a valid output structure but increases the risk of incorrect values when the model can't find the data.</li>
+</ul>
+<p>Let's put that into practice!</p>
+<p>I first defined an example json and then referenced it as an example in the system prompt:</p>
+<pre class="language-python"><code class="language-python">
+PL_EXAMPLE <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">"po_number"</span><span class="token punctuation">:</span> <span class="token string">"PO-00001"</span><span class="token punctuation">,</span>
+    <span class="token string">"pl_date"</span><span class="token punctuation">:</span> <span class="token string">"2026-01-15"</span><span class="token punctuation">,</span>
+    <span class="token string">"vendor"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">"company_name"</span><span class="token punctuation">:</span> <span class="token string">"Supplies Co."</span><span class="token punctuation">,</span>
+        <span class="token string">"contact"</span><span class="token punctuation">:</span> <span class="token string">"Jane Smith"</span><span class="token punctuation">,</span>
+        <span class="token string">"email"</span><span class="token punctuation">:</span> <span class="token string">"jane.smith@supplies.example"</span><span class="token punctuation">,</span>
+        <span class="token string">"address"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">"address"</span><span class="token punctuation">:</span> <span class="token string">"123 Commerce Ave"</span><span class="token punctuation">,</span>
+            <span class="token string">"postal_code"</span><span class="token punctuation">:</span> <span class="token string">"10001"</span><span class="token punctuation">,</span>
+            <span class="token string">"city"</span><span class="token punctuation">:</span> <span class="token string">"New York"</span><span class="token punctuation">,</span>
+            <span class="token string">"country"</span><span class="token punctuation">:</span> <span class="token string">"United States"</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">"ship_to"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">"company_name"</span><span class="token punctuation">:</span> <span class="token string">"Global Retail Inc."</span><span class="token punctuation">,</span>
+        <span class="token string">"contact"</span><span class="token punctuation">:</span> <span class="token string">"John Doe"</span><span class="token punctuation">,</span>
+        <span class="token string">"email"</span><span class="token punctuation">:</span> <span class="token string">"john.doe@globalretail.example"</span><span class="token punctuation">,</span>
+        <span class="token string">"address"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">"address"</span><span class="token punctuation">:</span> <span class="token string">"456 Distribution Blvd"</span><span class="token punctuation">,</span>
+            <span class="token string">"postal_code"</span><span class="token punctuation">:</span> <span class="token string">"75001"</span><span class="token punctuation">,</span>
+            <span class="token string">"city"</span><span class="token punctuation">:</span> <span class="token string">"Paris"</span><span class="token punctuation">,</span>
+            <span class="token string">"country"</span><span class="token punctuation">:</span> <span class="token string">"France"</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">"line_items"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+        <span class="token punctuation">{</span><span class="token string">"sku"</span><span class="token punctuation">:</span> <span class="token string">"ABC-1234-XX"</span><span class="token punctuation">,</span> <span class="token string">"description"</span><span class="token punctuation">:</span> <span class="token string">"Sample Product A"</span><span class="token punctuation">,</span> <span class="token string">"quantity"</span><span class="token punctuation">:</span> <span class="token number">100</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span><span class="token string">"sku"</span><span class="token punctuation">:</span> <span class="token string">"DEF-5678-YY"</span><span class="token punctuation">,</span> <span class="token string">"description"</span><span class="token punctuation">:</span> <span class="token string">"Sample Product B"</span><span class="token punctuation">,</span> <span class="token string">"quantity"</span><span class="token punctuation">:</span> <span class="token number">250</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span><span class="token string">"sku"</span><span class="token punctuation">:</span> <span class="token string">"GHI-9012-ZZ"</span><span class="token punctuation">,</span> <span class="token string">"description"</span><span class="token punctuation">:</span> <span class="token string">"Sample Product C"</span><span class="token punctuation">,</span> <span class="token string">"quantity"</span><span class="token punctuation">:</span> <span class="token number">50</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token string">"notes"</span><span class="token punctuation">:</span> <span class="token string">"Handle with care. Store in a cool, dry place."</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+
+
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+SYSTEM_PROMPT_1 <span class="token operator">=</span> <span class="token string">""</span>"
+You are a data mapping specialist<span class="token punctuation">.</span> Your single job <span class="token keyword">is</span> to read messy<span class="token punctuation">,</span> raw OCR text <span class="token keyword">in</span> Markdown <span class="token builtin">format</span> <span class="token keyword">and</span> normalize it into the requested structure<span class="token punctuation">.</span>
+
+Apply these transformation rules to the data mapping <span class="token keyword">in</span> the order below<span class="token punctuation">:</span>
+
+<span class="token number">1.</span> LINE ITEM AGGREGATION<span class="token punctuation">:</span> Look across the entire document<span class="token punctuation">.</span> If you find multiple separate tables <span class="token keyword">or</span> fragmented data aggregate <span class="token keyword">and</span> merge them into a single<span class="token punctuation">,</span> flat <span class="token builtin">list</span><span class="token punctuation">.</span>
+<span class="token number">2.</span> SKU ISOLATION<span class="token punctuation">:</span> Explicitly split SKUs <span class="token keyword">from</span> their text descriptions<span class="token punctuation">.</span> If the OCR has bound them together <span class="token punctuation">(</span>e<span class="token punctuation">.</span>g<span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token string">'A109-Blue Widget'</span> <span class="token keyword">or</span> <span class="token string">'Widget Blue (A109)'</span><span class="token punctuation">)</span><span class="token punctuation">,</span> strip out the code <span class="token keyword">and</span> <span class="token builtin">map</span> it strictly to the SKU field<span class="token punctuation">,</span> leaving only the clean name <span class="token keyword">in</span> the description field<span class="token punctuation">.</span>
+<span class="token number">3.</span> GEOGRAPHIC SPLITTING<span class="token punctuation">:</span> Look at address rows<span class="token punctuation">.</span> Parse <span class="token keyword">and</span> extract the city<span class="token operator">/</span>place name <span class="token keyword">from</span> the numerical postal <span class="token keyword">or</span> ZIP code<span class="token punctuation">.</span> Do <span class="token keyword">not</span> leave them combined <span class="token keyword">in</span> a single string<span class="token punctuation">.</span>
+
+You must respond <span class="token keyword">in</span> JSON<span class="token punctuation">.</span> Example output<span class="token punctuation">:</span>
+<span class="token punctuation">{</span>
+    <span class="token string">"po_number"</span><span class="token punctuation">:</span> <span class="token string">"PO-00001"</span><span class="token punctuation">,</span>
+    <span class="token string">"pl_date"</span><span class="token punctuation">:</span> <span class="token string">"2026-01-15"</span><span class="token punctuation">,</span>
+    <span class="token string">"vendor"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">"company_name"</span><span class="token punctuation">:</span> <span class="token string">"Supplies Co."</span><span class="token punctuation">,</span>
+
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span></code></pre>
+<p>I also dropped the OCR resilience instruction in the prompt because I think this might work better in the context of cross referencing. My train of thought here is that having the data that it's being cross referenced to might be a better context for an agent to fix an OCR issue over defining all possible edge cases with the risk of still be misinterpreted.</p>
+<p>I'm going to make an assumption here that my input data is a bit cleaner to work with. My input is more concise and has less context than a human request like in the study. I also care more about having the valid output structure. Having the same structure all the time makes it easier for me to use it downstream to crosscheck the data. If the data cannot be found, I'd rather have a 95% correct output that needs a review than an object that cannot be parsed. So I chose to keep enforcing the format.</p>
+<h4>Selecting and testing models</h4>
+<p>For model selection I looked at the leaderboard table in the study and checked which would run on my system with https://www.canirun.ai/. Luckily for me it confirmed that I could run the 3rd best in the leaderboard: <code>gemma 3:12b</code>!</p>
+<p>The following tests finished in about 60-80 seconds against both document formats from part one. But it mapped the number of packages as SKU quantity for the Stark format.</p>
+<pre><code>....
+  &quot;line_items&quot;: [
+    {
+      &quot;sku&quot;: &quot;NJJ-6054-RM&quot;,
+      &quot;description&quot;: &quot;Modern Vacuum Cleaner&quot;,
+      &quot;quantity&quot;: 4 &lt;- should have been 34
+    },
+    {
+      &quot;sku&quot;: &quot;VRD-9027-NG&quot;,
+      &quot;description&quot;: &quot;Vintage Headphones&quot;,
+      &quot;quantity&quot;: 33 &lt;- should have been 330
+    },
+....
+</code></pre>
+<p>This was easily fixed by adding another rule to my system prompt file: <code>2. Map the quantity to the number of individual product units. Ignore packaging quantities.</code></p>
+<p>Out of curiosity I tried another newer smaller model from the same family<code>gemma4:e4b</code> and that returned the same quality in 30-40 seconds depending on my template!</p>
+<p>What about accidentally swapped columns? These got handled without adding anything to the system prompts. For example the lines below:</p>
+<pre class="language-markdown"><code class="language-markdown">....
+| OKE-4827-OW Professional Speaker | 44 | piece |
+| Ergonomic Water Bottle PVP-9315-JD | 729 | piece |
+| BAM-1980-IW Ergonomic Backpack | 287 | piece |
+....</code></pre>
+<p>Resulted in these lines:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"OKE-4827-OW"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Professional Speaker"</span><span class="token punctuation">,</span>
+  <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">44</span>
+<span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"PVP-9315-JD"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Ergonomic Water Bottle"</span><span class="token punctuation">,</span>
+  <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">729</span>
+<span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"BAM-1980-IW"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Ergonomic Backpack"</span><span class="token punctuation">,</span>
+  <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">287</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Great! This means that the markdown OCR data gets reliably parsed to my canonical data model. Out of even more curiosity I tested out the <code>llama3.1</code> model that I disregarded earlier and this now also gave very similar results. But also introduced a hallucination: <code>&quot;notes&quot;: &quot;Do not stack other packages on top. Handle with care.&quot;</code> Nowhere in the document does it say: handle with care!</p>
+<p>This only confirms that we need some form of downstream validation!</p>
+<h4>What about consistency?</h4>
+<p>It's no secret that AI models are non deterministic by default. Meaning that the same input does not always guarantee the same output. This made me curious to find out what the results would be if I ran the same document and prompt for 10 times (per format).</p>
+<p>The first attempt had the best output but the differences between other tests were not deal breaking:</p>
+<ul>
+<li>One added a &quot;SHIPPER NOTE:&quot; prefix to the note field.</li>
+<li>One added .com after the .fakedomail and removed the ending period from the note.</li>
+<li>One removed the ending period from the note.
+After the 4th test I was getting identical responses up to 10 attempts. I assume this is some default KV caching on the Ollama side but I did not look into it further.</li>
+</ul>
+<p>While these results are accurate enough for me, it didn't sit well that the same input did not result in the same output. I found an interesting <a href="https://github.com/ollama/ollama/issues/3775">Github issue </a>explaining that I could make the responses more deterministic by changing the temperature to 0.</p>
+<p>Up until that point I was working with each model's defaults:</p>
+<pre class="language-bash"><code class="language-bash">ollama show <span class="token parameter variable">--parameters</span> gemma4:latest
+top_p                          <span class="token number">0.95</span>
+temperature                    <span class="token number">1</span>
+top_k                          <span class="token number">64</span></code></pre>
+<p>Let's try it out! Setting the temperature is quite easy by adding <code>options={&quot;temperature&quot;: 0},</code> to the <code>generate_model_response</code> I created earlier.</p>
+<pre class="language-python"><code class="language-python"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    response <span class="token operator">=</span> client<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>
+        model<span class="token operator">=</span>MODEL<span class="token punctuation">,</span>
+        system<span class="token operator">=</span>SYSTEM_PROMPT_1<span class="token punctuation">,</span>
+        prompt<span class="token operator">=</span>document<span class="token punctuation">,</span>
+        options<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">"temperature"</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token builtin">format</span><span class="token operator">=</span>PackingList<span class="token punctuation">.</span>model_json_schema<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span></code></pre>
+<p>After adding this I got the same response for all tests. Interestingly for the ACME format this meant that part of the misread SKU was now attached to the description:</p>
+<pre><code>{&quot;sku&quot;:&quot;RYD-4918-&quot;,&quot;description&quot;:&quot;Hil Deluxe Jacket&quot;,&quot;quantity&quot;:940}
+</code></pre>
+<h3>Zooming out</h3>
+<p>Alright! For this use case I can safely say that a LLM can be used to produce structured and fairly reliable data from docling's OCR data. Along the way I learned that it's relatively simple to work with a local LLM and optimise its results. The top things I learned:</p>
+<ul>
+<li>I only needed a 8B parameter model on my machine to get good results</li>
+<li>The best prompting strategy is a combination of enforcing the format, adding examples and making sure the rules in the system prompt are as unambiguous as possible.</li>
+<li>Setting the temperature to 0 makes responses more deterministic.</li>
+</ul>
+<p>The whole pipeline now runs at about 30-45 seconds depending on the format and number of pages. Half of that time is used by docling!</p>
+<p>Now that I have the right elements for a working proof of concept it's time to look at the bigger picture and see how it can be used in production. Let's explore this in the next part!</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container">
+        <small>© Adam Tetz 2026 </small>
+      </div>
+    </footer>
+  </body>
+</html>
