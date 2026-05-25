@@ -2,13 +2,20 @@
 title: How reliably can AI assist in document extraction?  Part 2.
 date: 2026-05-26
 ---
+
+{% gallery "teaser" 1 %}
+{% galleryImg "/assets/images/docling/teaserp2.drawio.png", "image of pdf versus json output", 1024 %}
+{% endgallery %}
+
 Armed with the extracted packing list data from part one I can now look at how this can be further used to eventually automate the cross referencing. Did you miss the first part? Don't worry, you can read it here: link.
 
 Let's unpack this a bit (pun intended!). I can now reliably extract the data of the scanned PDFs to markdown files but those files have a different layout and content depending on the PDF format. And the last thing I want to do is build something that contains logic tied to an individual format. Like mentioned in the previous part, this is likely to break when the format changes and needs extra maintenance.
 
 Instead I want to leverage the power of a large language model (LLM) and offload the format changes to it. Why? The biggest reason being that LLMs have semantic understanding. It can understand the complete markdown file as a whole regardless of some minor issues in the layout. So I expect it to handle my requirements of handling format changes and fuzzy input errors.
+
 ### Defining the output structure
-Another thing LLMs are good at is providing structured output. And since I want to use the extracted document further downstream, be it for a human-in-the-loop system or for a draft in an ERP system, I'll first create a [_Canonical Data Model_ ](https://www.enterpriseintegrationpatterns.com/patterns/messaging/CanonicalDataModel.html). A Canonical Data Model is a way of saying that we'll use a shared data model that is tied to the domain entity instead of a particular application format. It's a pattern used in messaging that really pays off when the number of  applications grow. I like the idea of anything that I might use in the pipeline to produce or consume the same format.
+
+Another thing LLMs are good at is providing structured output. And since I want to use the extracted document further downstream, be it for a human-in-the-loop system or for a draft in an ERP system, I'll first create a [_Canonical Data Model_ ](https://www.enterpriseintegrationpatterns.com/patterns/messaging/CanonicalDataModel.html). A Canonical Data Model is a way of saying that we'll use a shared data model that is tied to the domain entity instead of a particular application format. It's a pattern used in messaging that really pays off when the number of applications grow. I like the idea of anything that I might use in the pipeline to produce or consume the same format.
 
 My tool of choice for this is [Pydantic](https://pydantic.dev/). It has everything I need, from data validation to exporting json models if I decide to use the model outside of Python. This is what my model looks like:
 
@@ -47,14 +54,18 @@ class PackingList(BaseModel):
     line_items: list[PackingLineItem]
     notes: Optional[str]
 ```
-I added the most important information and made the address information optional. 
+
+I added the most important information and made the address information optional.
 
 ### Working with a local LLM
-Where to start? What model to choose? This is quite the rabbit hole on its own. The subject is absolutely flooded all over the internet. My desk research ended up being an approach of asking Claude / Gemini, googling, scanning a couple of subreddits like r/ollama and r/LocalLLaMA. 
 
-While searching for local LLM tooling that works on my Mac M1 Pro, I first landed on [Ollama](https://ollama.com/) and then tinkered around with the examples in the [docs](https://docs.ollama.com/). I find they have a simple API, CLI and Python library so I stuck with it. 
+Where to start? What model to choose? This is quite the rabbit hole on its own. The subject is absolutely flooded all over the internet. My desk research ended up being an approach of asking Claude / Gemini, googling, scanning a couple of subreddits like r/ollama and r/LocalLLaMA.
+
+While searching for local LLM tooling that works on my Mac M1 Pro, I first landed on [Ollama](https://ollama.com/) and then tinkered around with the examples in the [docs](https://docs.ollama.com/). I find they have a simple API, CLI and Python library so I stuck with it.
+
 #### Cherry picking models
-Quickly I had a small test running and cherry picked some models. With Ollama it's very easy to pull a model using the CLI  e.g. `ollama pull llama3.1:latest` and then reference it in Python using the library. I added the following function to my docling testfile:
+
+Quickly I had a small test running and cherry picked some models. With Ollama it's very easy to pull a model using the CLI e.g. `ollama pull llama3.1:latest` and then reference it in Python using the library. I added the following function to my docling testfile:
 
 ```python
 import logging
@@ -91,9 +102,9 @@ def generate_model_response(client: Client, document: str) -> PackingList | None
     except ValidationError as exc:
         logger.error("Validation failed: %s", exc)
         return None
-    
-   
-# docling pipeline function 
+
+
+# docling pipeline function
 ...
 
 def main():
@@ -103,7 +114,7 @@ def main():
     source = data_folder / "PO-40085-fedex-300dpi.pdf"
 
     md = convert_pdf_to_markdown(source)
-	
+
 	client = Client(host=OLLAMA_HOST)
     model_response = generate_model_response(client, md)
     print(model_response.model_dump_json())
@@ -118,14 +129,16 @@ if __name__ == "__main__":
 ```
 
 In the example above the Ollama Client is used with the following parameters:
- - model - the model I want to use
- - system - my system prompt
- - prompt - the markdown file to parse
- - format - The output format I want to enforce. In this case the JSON schema of my PackingList model. 
- 
+
+- model - the model I want to use
+- system - my system prompt
+- prompt - the markdown file to parse
+- format - The output format I want to enforce. In this case the JSON schema of my PackingList model.
+
 The `return PackingList.model_validate_json(raw)` is there to parse the LLM output to my model and validate it. If this fails then I want it logged and None returned.
 
 And it produced the following json in around 39 seconds:
+
 ```json
 {
   "po_number": "PO-40085",
@@ -186,10 +199,9 @@ And it produced the following json in around 39 seconds:
   ],
   "notes": "Place in dry location - keep away from rain."
 }
-
 ```
 
-Not that bad at all! But also not good enough. My SKU contained an item description and my shipping address was missing a city because it got attached to postal code. 
+Not that bad at all! But also not good enough. My SKU contained an item description and my shipping address was missing a city because it got attached to postal code.
 
 Fuelled by enthusiasm I went on fine-tuning the prompt a bit more and swapping out the models. The results varied, some validation errors and some missing data. I found mistral-small to produce the best output but it also took around 100 seconds to complete:
 
@@ -197,7 +209,7 @@ Fuelled by enthusiasm I went on fine-tuning the prompt a bit more and swapping o
 ...
 MODEL = "mistral-small:latest"
 SYSTEM_PROMPT = """
-You are a data mapping specialist. Your single job is to read messy, raw OCR text in Markdown format and normalize it into the requested structure. 
+You are a data mapping specialist. Your single job is to read messy, raw OCR text in Markdown format and normalize it into the requested structure.
 
 Apply these transformation rules to the data mapping:
 
@@ -209,6 +221,7 @@ Apply these transformation rules to the data mapping:
 ```
 
 resulting in:
+
 ```json
 {
   "po_number": "PO-40085",
@@ -261,26 +274,28 @@ resulting in:
       "description": "Classic Keyboard",
       "quantity": 987
     },
-    { "sku": "RYD-4918-Hil", 
-    "description": "Deluxe Jacket", 
-    "quantity": 940 }
+    { "sku": "RYD-4918-Hil", "description": "Deluxe Jacket", "quantity": 940 }
   ],
   "notes": "Place in dry location-keep away from rain"
 }
 ```
 
 Nearly perfect! The only mistake in the output was the misread SKU that was already in the markdown.
+
 ### Missing something more systematic
-Then it dawned on me that I had gotten a bit distracted by my shiny new toy and wasn't really being systematic. I had found something that worked. But was there more? Surely there is some research available on this subject? 
+
+Then it dawned on me that I had gotten a bit distracted by my shiny new toy and wasn't really being systematic. I had found something that worked. But was there more? Surely there is some research available on this subject?
 
 So I went on searching for relevant work on google scholar and I found a very interesting [article](https://arxiv.org/pdf/2602.14743) describing a benchmark called LLMStructBench for evaluating LLMs on extracting structured data. While this research focused on extracting data from text like e-mails or service requests, I still found some findings valuable and applicable to my use case:
-- Prompting strategy weighs more than the model size. The size of the model helps in value accuracy, but from a certain point the gains become marginal. 
-- The best performing prompting strategies include a *JSON schema* and *JSON example* in the *system prompt*. 
-- Enforcing the *format* is the safest choice for ensuring a valid output structure but increases the risk of incorrect values when the model can't find the data.
 
-Let's put that into practice! 
+- Prompting strategy weighs more than the model size. The size of the model helps in value accuracy, but from a certain point the gains become marginal.
+- The best performing prompting strategies include a _JSON schema_ and _JSON example_ in the _system prompt_.
+- Enforcing the _format_ is the safest choice for ensuring a valid output structure but increases the risk of incorrect values when the model can't find the data.
 
- I first defined an example json and then referenced it as an example in the system prompt:
+Let's put that into practice!
+
+I first defined an example json and then referenced it as an example in the system prompt:
+
 ```python
 
 PL_EXAMPLE = {
@@ -321,7 +336,7 @@ PL_EXAMPLE = {
 
 
 SYSTEM_PROMPT_1 = """
-You are a data mapping specialist. Your single job is to read messy, raw OCR text in Markdown format and normalize it into the requested structure. 
+You are a data mapping specialist. Your single job is to read messy, raw OCR text in Markdown format and normalize it into the requested structure.
 
 Apply these transformation rules to the data mapping in the order below:
 
@@ -335,17 +350,19 @@ You must respond in JSON. Example output:
     "pl_date": "2026-01-15",
     "vendor": {
         "company_name": "Supplies Co.",
-        
+
 ....
 ```
+
 I also dropped the OCR resilience instruction in the prompt because I think this might work better in the context of cross referencing. My train of thought here is that having the data that it's being cross referenced to might be a better context for an agent to fix an OCR issue over defining all possible edge cases with the risk of still be misinterpreted.
 
 I'm going to make an assumption here that my input data is a bit cleaner to work with. My input is more concise and has less context than a human request like in the study. I also care more about having the valid output structure. Having the same structure all the time makes it easier for me to use it downstream to crosscheck the data. If the data cannot be found, I'd rather have a 95% correct output that needs a review than an object that cannot be parsed. So I chose to keep enforcing the format.
 
 #### Selecting and testing models
+
 For model selection I looked at the leaderboard table in the study and checked which would run on my system with https://www.canirun.ai/. Luckily for me it confirmed that I could run the 3rd best in the leaderboard: `gemma 3:12b`!
 
-The following tests finished in about 60-80 seconds against both document formats from part one. But it mapped the number of packages as SKU quantity for the Stark format. 
+The following tests finished in about 60-80 seconds against both document formats from part one. But it mapped the number of packages as SKU quantity for the Stark format.
 
 ```
 ....
@@ -365,18 +382,20 @@ The following tests finished in about 60-80 seconds against both document format
 
 This was easily fixed by adding another rule to my system prompt file: `2. Map the quantity to the number of individual product units. Ignore packaging quantities.`
 
-Out of curiosity I tried another newer smaller model from the same family`gemma4:e4b` and that returned the same quality in 30-40 seconds depending on my template! 
+Out of curiosity I tried another newer smaller model from the same family`gemma4:e4b` and that returned the same quality in 30-40 seconds depending on my template!
 
 What about accidentally swapped columns? These got handled without adding anything to the system prompts. For example the lines below:
+
 ```markdown
 ....
-| OKE-4827-OW Professional Speaker        |            44 | piece             |
-| Ergonomic Water Bottle PVP-9315-JD      |           729 | piece             |
-| BAM-1980-IW Ergonomic Backpack          |           287 | piece             |
+| OKE-4827-OW Professional Speaker | 44 | piece |
+| Ergonomic Water Bottle PVP-9315-JD | 729 | piece |
+| BAM-1980-IW Ergonomic Backpack | 287 | piece |
 ....
 ```
 
 Resulted in these lines:
+
 ```json
 {
   "sku": "OKE-4827-OW",
@@ -398,18 +417,22 @@ Resulted in these lines:
 Great! This means that the markdown OCR data gets reliably parsed to my canonical data model. Out of even more curiosity I tested out the `llama3.1` model that I disregarded earlier and this now also gave very similar results. But also introduced a hallucination: `"notes": "Do not stack other packages on top. Handle with care."` Nowhere in the document does it say: handle with care!
 
 This only confirms that we need some form of downstream validation!
+
 #### What about consistency?
+
 It's no secret that AI models are non deterministic by default. Meaning that the same input does not always guarantee the same output. This made me curious to find out what the results would be if I ran the same document and prompt for 10 times (per format).
 
 The first attempt had the best output but the differences between other tests were not deal breaking:
-- One added a "SHIPPER NOTE:" prefix to the note field.
-- One added .com after the .fakedomail and removed the ending period from the note. 
-- One removed the ending period from the note.
-After the 4th test I was getting identical responses up to 10 attempts. I assume this is some default KV caching on the Ollama side but I did not look into it further.
 
-While these results are accurate enough for me, it didn't sit well that the same input did not result in the same output. I found an interesting [Github issue ](https://github.com/ollama/ollama/issues/3775)explaining that I could make the responses more deterministic by changing the temperature to 0. 
+- One added a "SHIPPER NOTE:" prefix to the note field.
+- One added .com after the .fakedomail and removed the ending period from the note.
+- One removed the ending period from the note.
+  After the 4th test I was getting identical responses up to 10 attempts. I assume this is some default KV caching on the Ollama side but I did not look into it further.
+
+While these results are accurate enough for me, it didn't sit well that the same input did not result in the same output. I found an interesting [Github issue ](https://github.com/ollama/ollama/issues/3775)explaining that I could make the responses more deterministic by changing the temperature to 0.
 
 Up until that point I was working with each model's defaults:
+
 ```bash
 ollama show --parameters gemma4:latest
 top_p                          0.95
@@ -417,7 +440,8 @@ temperature                    1
 top_k                          64
 ```
 
-Let's try it out! Setting the temperature is quite easy by adding `options={"temperature": 0},` to the `generate_model_response` I created earlier. 
+Let's try it out! Setting the temperature is quite easy by adding `options={"temperature": 0},` to the `generate_model_response` I created earlier.
+
 ```python
 ....
     response = client.generate(
@@ -431,17 +455,19 @@ Let's try it out! Setting the temperature is quite easy by adding `options={"tem
 ```
 
 After adding this I got the same response for all tests. Interestingly for the ACME format this meant that part of the misread SKU was now attached to the description:
+
 ```
 {"sku":"RYD-4918-","description":"Hil Deluxe Jacket","quantity":940}
 ```
 
 ### Zooming out
+
 Alright! For this use case I can safely say that a LLM can be used to produce structured and fairly reliable data from docling's OCR data. Along the way I learned that it's relatively simple to work with a local LLM and optimise its results. The top things I learned:
 
 - I only needed a 8B parameter model on my machine to get good results
 - The best prompting strategy is a combination of enforcing the format, adding examples and making sure the rules in the system prompt are as unambiguous as possible.
 - Setting the temperature to 0 makes responses more deterministic.
 
-The whole pipeline now runs at about 30-45 seconds depending on the format and number of pages. Half of that time is used by docling! 
+The whole pipeline now runs at about 30-45 seconds depending on the format and number of pages. Half of that time is used by docling!
 
 Now that I have the right elements for a working proof of concept it's time to look at the bigger picture and see how it can be used in production. Let's explore this in the next part!
