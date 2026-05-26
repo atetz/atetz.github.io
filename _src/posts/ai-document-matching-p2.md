@@ -7,7 +7,7 @@ date: 2026-05-26
 {% galleryImg "/assets/images/docling/teaserp2.drawio.png", "image of pdf versus json output", 1024 %}
 {% endgallery %}
 
-Armed with the extracted packing list data from part one I can now look at how this can be further used to eventually automate the cross referencing. Did you miss the first part? Don't worry, you can read it here: link.
+Armed with the extracted packing list data from part one I can now look at how this can be further used to eventually automate the cross referencing. Did you miss the first part? Don't worry, you can read it <a href="/posts/ai-document-matching-p1/index.html" target = "_self">here</a></p>
 
 Let's unpack this a bit (pun intended!). I can now reliably extract the data of the scanned PDFs to markdown files but those files have a different layout and content depending on the PDF format. And the last thing I want to do is build something that contains logic tied to an individual format. Like mentioned in the previous part, this is likely to break when the format changes and needs extra maintenance.
 
