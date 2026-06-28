@@ -1,5 +1,5 @@
 ---
-title: How reliably can AI assist in document extraction?  Part 2.
+title: How reliably can AI assist in document extraction? Part 2.
 date: 2026-05-26
 ---
 
