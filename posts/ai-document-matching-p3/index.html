@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How reliably can AI assist in document extraction? Part 3</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/about/">About</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small><i>Freelance integration consultant living in Burgundy, France.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      How reliably can AI assist in document extraction? Part 3
+    </h2>
+    <p>June 29, 2026</p>
+</hgroup>
+  <p>In this part we'll orchestrate the pieces we've built so far, document extraction with docling (part 1) and AI data processing (part 2), into one automated workflow.
+Did you miss the last part? Don't worry, you can read it <a href="/posts/ai-document-matching-p2/index.html" target="_self">here</a></p>
+<h2>The idea</h2>
+<p>The first workflow idea looked something like this:</p>
+<pre class="mermaid">
+flowchart TD
+A@{ shape: circle, label: "new file" } --> B
+B@{ shape: rect, label: "Run docling pipeline" } --> C
+C@{shape: diam, label: "Pipeline success?"}
+		C --> |Yes| D
+		C --> |No| E@{shape: rect, label: "flag as failed"}
+D@{shape: rect, label: "LLM data extraction"} --> F
+F@{shape: diam, label: "Valid LLM output?"}
+		F --> |Yes| G
+		F --> |No| E
+G@{ shape: rect, label: "Get PO data" } --> H
+H@{ shape: rect, label: "Cross reference" } --> I
+
+I@{shape: diam, label: "PL matches PO?"}
+		I --> |Yes| Z
+		I --> |No| E
+
+Z@{shape: framed-circle, label: "End"}
+</pre>
+<ol>
+<li>Most scan solutions I worked with either sent the file via mail or saved it to a location on disk. In this case a new file will trigger the workflow.</li>
+<li>The file is processed by the docling pipeline.</li>
+<li>If successful, the docling output is processed by the LLM</li>
+<li>If the LLM output is valid then the purchase order data is retrieved</li>
+<li>The extracted data is cross referenced against the purchase order.
+Any failure at any point in the workflow is flagged as failed.</li>
+</ol>
+<h2>Setting up the parts for orchestration</h2>
+<h3>n8n</h3>
+<p>To orchestrate the workflow I chose to use n8n because it <a href="https://docs.n8n.io/deploy/host-n8n">can run locally</a> and it has built-in features to work with AI like the <a href="https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.agent">AI Agent node</a>. For example, n8n's <em>AI Agent</em> node integrates with the Ollama API under the hood without much hassle. They also publish templates and documentation for developing agentic workflows which I find is a good source for inspiration.</p>
+<p>Since I wanted to work with local files (read and move) I had to set the following environment variables:</p>
+<pre><code>export N8N_RESTRICT_FILE_ACCESS_TO=&quot;/path/to/my/folder&quot;
+export NODES_EXCLUDE=&quot;[]&quot;
+</code></pre>
+<ul>
+<li><code>N8N_RESTRICT_FILE_ACCESS_TO</code> restricts n8n's access to a specific folder on disk.</li>
+<li><code>NODES_EXCLUDE</code> enables all nodes that are disabled by default. In my case the ones I need:
+<code>n8n-nodes-base.executeCommand</code> to execute cli actions and <code>n8n-nodes-base.localFileTrigger</code> to be able to use local file triggers. For example when a new file is created.</li>
+</ul>
+<p>If this sounds scary, alternatively a FTP node can be used on a schedule to achieve the same outcomes.</p>
+<p>I also created a sub-flow that mocks a json reponse with purchase orders.</p>
+<h3>Docling serve API</h3>
+<p>The docling project has a cool package called <a href="https://github.com/docling-project/docling-serve">docling-serve</a> that wraps docling's capabilities with a simple REST API. I used <a href="https://pipx.pypa.io/stable/">pipx</a> to install it in an isolated environment and because I used the onnx RapidOCR models, I also had to inject the onnxruntime:</p>
+<pre><code>pipx install &quot;docling-serve[ui]&quot;
+pipx inject docling-serve onnxruntime
+</code></pre>
+<p>Adding <code>[ui]</code> also installs a nice and easy UI to quickly try out different settings.</p>
+<p>To start docling-serve simply run: <code>docling-serve run --enable-ui</code> and the UI will be accessible via: <code>http://127.0.0.1:5001/ui</code> and the API documentation will be accessible via: <code>http://127.0.0.1:5001/docs</code></p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-docling" style="grid-template-columns: repeat(2, 1fr);">                        <a href="/img/9ixfQgI_I2-1475.jpeg" data-pswp-width="1475" data-pswp-height="905" target="_blank" style="text-decoration: none">          <img src="/img/9ixfQgI_I2-512.jpeg" alt="Docling serve UI">        </a>            <a href="/img/oWBXIh6rZ_-1475.jpeg" data-pswp-width="1475" data-pswp-height="905" target="_blank" style="text-decoration: none">          <img src="/img/oWBXIh6rZ_-512.jpeg" alt="Docling serve docs">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-docling',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>Converting a file via the API is quite simple. You can either use the <code>/v1/convert/source</code> endpoint to process files from a <em>URL</em> or <em>base64 string</em> or use the <code>/v1/convert/file</code> endpoint to send the files via <em>multipart</em>.</p>
+<p>Since I don't need the base64 overhead, I chose to use the multipart option. Testing this API was relatively easy using Postman:
+<link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-postman" style="grid-template-columns: repeat(1, 1fr);">                        <a href="/img/I04pe9Bqp1-1387.jpeg" data-pswp-width="1387" data-pswp-height="1338" target="_blank" style="text-decoration: none">          <img src="/img/I04pe9Bqp1-1024.jpeg" alt="Docling serve Postman">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-postman',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<ul>
+<li>I created a POST request to http://127.0.0.1:5001/v1/convert/file</li>
+<li>set the body to form-data</li>
+<li>Set the following key and values.
+<ul>
+<li><em>files</em> to the pdf file</li>
+<li><em>force_ocr</em> to <em>true</em></li>
+<li><em>ocr_engine</em> to <em>rapidocr</em></li>
+<li><em>ocr_lang</em> to <em>english</em></li>
+<li><em>to_formats</em> to <em>md</em></li>
+</ul>
+</li>
+</ul>
+<p>After some trial and error I found out that there was no official way to use the models from part 1. So I ended up changing the rapidorcr config in: <code>/my/home/.local/pipx/venvs/docling-serve/lib/python3.13/site-packages/rapidocr/config.yaml</code></p>
+<p>Relevant parts that I changed.</p>
+<pre><code>....
+Det:
+    engine_type: &quot;onnxruntime&quot;
+    lang_type: &quot;ch&quot;
+    model_type: &quot;server&quot;
+    ocr_version: &quot;PP-OCRv5&quot;
+...
+
+Cls:
+    engine_type: &quot;onnxruntime&quot;
+    lang_type: &quot;ch&quot;
+    model_type: &quot;mobile&quot;
+    ocr_version: &quot;PP-OCRv4&quot;
+...
+Rec:
+    engine_type: &quot;onnxruntime&quot;
+    lang_type: &quot;ch&quot;
+    model_type: &quot;mobile&quot;
+    ocr_version: &quot;PP-OCRv5&quot;
+</code></pre>
+<p>And then I copied the local model files from part 1 to:
+<code>/my/home/.local/pipx/venvs/docling-serve/lib/python3.13/site-packages/rapidocr/models/</code></p>
+<h2>The workflow</h2>
+<p>The end result of the workflow looks like this:</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8noverview" style="grid-template-columns: repeat(1, 1fr);">                        <a href="/img/UKJbrfS4Rx-2000.jpeg" data-pswp-width="2000" data-pswp-height="603" target="_blank" style="text-decoration: none">          <img src="/img/UKJbrfS4Rx-1024.jpeg" alt="n8n workflow overview">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8noverview',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<h3>1. Monitor watch folder</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-mwf" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/Qkln4b8arw-913.jpeg" data-pswp-width="913" data-pswp-height="440" target="_blank" style="text-decoration: none">          <img src="/img/Qkln4b8arw-256.jpeg" alt="n8n overview monitor watch folder">        </a>            <a href="/img/ZtEpW3RVkc-1607.jpeg" data-pswp-width="1607" data-pswp-height="504" target="_blank" style="text-decoration: none">          <img src="/img/ZtEpW3RVkc-256.jpeg" alt="n8n monitor watch folder file trigger">        </a>            <a href="/img/5a8prz_7Xt-1607.jpeg" data-pswp-width="1607" data-pswp-height="504" target="_blank" style="text-decoration: none">          <img src="/img/5a8prz_7Xt-256.jpeg" alt="n8n monitor watch folder filter">        </a>            <a href="/img/ZiONLYiaMz-1607.jpeg" data-pswp-width="1607" data-pswp-height="504" target="_blank" style="text-decoration: none">          <img src="/img/ZiONLYiaMz-256.jpeg" alt="n8n monitor watch folder file read">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-mwf',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>A <em>Local file trigger</em> node is used to monitor a path on the local filesystem. Before the file is read from the disk a <em>filter</em> node checks if the last 4 characters of the file path end in .pdf.</p>
+<h3>2. Log pending action</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-lpa" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/3Vea8gAkXS-340.jpeg" data-pswp-width="340" data-pswp-height="337" target="_blank" style="text-decoration: none">          <img src="/img/3Vea8gAkXS-256.jpeg" alt="Log pending action overview">        </a>            <a href="/img/V0J562Br51-1606.jpeg" data-pswp-width="1606" data-pswp-height="590" target="_blank" style="text-decoration: none">          <img src="/img/V0J562Br51-256.jpeg" alt="Log pending action details">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-lpa',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>Adds a new row to the log table indicating that processing has started. The log keeps track of each file's status as it moves through the workflow:</p>
+<ul>
+<li>pending - processing started, no result yet</li>
+<li>healing - SKU count matched but SKU text mismatched, OCR-heal attempt in progress</li>
+<li>completed - done, all matched</li>
+<li>error - did not match, or an upstream step failed</li>
+</ul>
+<p>Additional details are logged on an error. For example, the output of the failed validation step.</p>
+<h3>3. Execute docling pipeline</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-edp" style="grid-template-columns: repeat(3, 1fr);">                        <a href="/img/JF3PAmTbfw-555.jpeg" data-pswp-width="555" data-pswp-height="442" target="_blank" style="text-decoration: none">          <img src="/img/JF3PAmTbfw-256.jpeg" alt="Execute docling pipeline overview">        </a>            <a href="/img/HQ8BXsZoma-1604.jpeg" data-pswp-width="1604" data-pswp-height="1246" target="_blank" style="text-decoration: none">          <img src="/img/HQ8BXsZoma-256.jpeg" alt="docling serve http call">        </a>            <a href="/img/8yd1gRpnC3-1604.jpeg" data-pswp-width="1604" data-pswp-height="988" target="_blank" style="text-decoration: none">          <img src="/img/8yd1gRpnC3-256.jpeg" alt="switch node after call">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-edp',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>A <em>HTTP Request</em> node posts the PDF and field parameters to the docling-serve API using multipart. A <em>switch</em> node then checks if the <em>status</em> field in the result of the API is equal to <em>success</em>.</p>
+<h3>4. Extraction Agent</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-exag" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/Hyj8CQlbn0-413.jpeg" data-pswp-width="413" data-pswp-height="597" target="_blank" style="text-decoration: none">          <img src="/img/Hyj8CQlbn0-256.jpeg" alt="Extraction agent overview">        </a>            <a href="/img/SCIYQ6Fzn8-1194.jpeg" data-pswp-width="1194" data-pswp-height="734" target="_blank" style="text-decoration: none">          <img src="/img/SCIYQ6Fzn8-256.jpeg" alt="Extraction agent settings">        </a>            <a href="/img/CyuLWd7Po9-1194.jpeg" data-pswp-width="1194" data-pswp-height="448" target="_blank" style="text-decoration: none">          <img src="/img/CyuLWd7Po9-256.jpeg" alt="Extraction agent model">        </a>            <a href="/img/a-7jNF2qzG-1194.jpeg" data-pswp-width="1194" data-pswp-height="875" target="_blank" style="text-decoration: none">          <img src="/img/a-7jNF2qzG-256.jpeg" alt="Extraction agent output parser">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-exag',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>The docling output is processed by a local Ollama AI agent.</p>
+<ul>
+<li>Between part 2 and part 3 the Gemma 4 12B model was released, so I chose to use that instead.</li>
+<li>The system prompt (system message) of part 2 is used.</li>
+<li>n8n still expects a credential in the AI Agent node so I created a <em>Ollama account</em> credential without a secret that points to my local API</li>
+<li>Thinking is disabled</li>
+<li>Sampling Temperature is set to 0.0.</li>
+<li>The <em>output parser</em> is connected to a json schema of the canonical model which enforces the response in our packing list format. N8n does not support json reference objects in the schema so I used a small Python package called <a href="https://jsonref.readthedocs.io/en/latest/">jsonref</a> to dereference it first.</li>
+</ul>
+<details name="show_sysprompt1">
+<summary>Click to show the system prompt of Part 2.</summary>
+<pre class="language-md"><code class="language-md">You are a data mapping specialist. Your single job is to read messy, raw OCR text in Markdown format and normalize it into the requested structure.
+
+Apply these transformation rules to the data mapping in the order below:
+
+<span class="token list punctuation">1.</span> LINE ITEM AGGREGATION: Look across the entire document. If you find multiple separate tables or fragmented data aggregate and merge them into a single, flat list.
+<span class="token list punctuation">2.</span> Map the quantity to the number of individual product units. Ignore packaging quantities.
+<span class="token list punctuation">3.</span> SKU ISOLATION: Explicitly split SKUs from their text descriptions. If the OCR has bound them together (e.g., 'A109-Blue Widget' or 'Widget Blue (A109)'), strip out the code and map it strictly to the SKU field, leaving only the clean name in the description field.
+<span class="token list punctuation">4.</span> GEOGRAPHIC SPLITTING: Look at address rows. Parse and extract the city/place name from the numerical postal or ZIP code. Do not leave them combined in a single string.
+
+You must respond in JSON. Example output:
+{
+"po_number": "PO-00001",
+"pl_date": "2026-01-15",
+"vendor": {
+"company_name": "Supplies Co.",
+"contact": "Jane Smith",
+"email": "jane.smith@supplies.example",
+"address": {
+"address": "123 Commerce Ave",
+"postal_code": "10001",
+"city": "New York",
+"country": "United States",
+},
+},
+"ship_to": {
+"company_name": "Global Retail Inc.",
+"contact": "John Doe",
+"email": "john.doe@globalretail.example",
+"address": {
+"address": "456 Distribution Blvd",
+"postal_code": "75001",
+"city": "Paris",
+"country": "France",
+},
+},
+"line_items": [
+{"sku": "ABC-1234-XX", "description": "Sample Product A", "quantity": 100},
+{"sku": "DEF-5678-YY", "description": "Sample Product B", "quantity": 250},
+{"sku": "GHI-9012-ZZ", "description": "Sample Product C", "quantity": 50},
+{"sku": "GHI-9012-AA", "description": "Sample Product X", "quantity": 950},
+],
+"notes": "Handle with care. Store in a cool, dry place.",
+}</code></pre>
+</details>
+<h3>5. Setting comparison data</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-scd" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/PShDHUmREr-400.jpeg" data-pswp-width="400" data-pswp-height="419" target="_blank" style="text-decoration: none">          <img src="/img/PShDHUmREr-256.jpeg" alt="Extraction agent overview">        </a>            <a href="/img/Pqh8kuad7--1227.jpeg" data-pswp-width="1227" data-pswp-height="1008" target="_blank" style="text-decoration: none">          <img src="/img/Pqh8kuad7--256.jpeg" alt="Extraction agent settings">        </a>            <a href="/img/nh-GAZkzwl-758.jpeg" data-pswp-width="758" data-pswp-height="271" target="_blank" style="text-decoration: none">          <img src="/img/nh-GAZkzwl-256.jpeg" alt="Extraction agent model">        </a>            <a href="/img/H5NnAte2JW-1197.jpeg" data-pswp-width="1197" data-pswp-height="461" target="_blank" style="text-decoration: none">          <img src="/img/H5NnAte2JW-256.jpeg" alt="Extraction agent output parser">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-scd',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>The purchase order data is pulled into the process for comparison. The cross-reference node expects the extraction data to be the current input, so this part also resets the input back to the extraction agent's output.</p>
+<h3>6. Cross referencing</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-crosr" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/rayl0IbhuT-808.jpeg" data-pswp-width="808" data-pswp-height="508" target="_blank" style="text-decoration: none">          <img src="/img/rayl0IbhuT-256.jpeg" alt="Cross referencing overview">        </a>            <a href="/img/uIJkNSFF8O-1189.jpeg" data-pswp-width="1189" data-pswp-height="733" target="_blank" style="text-decoration: none">          <img src="/img/uIJkNSFF8O-256.jpeg" alt="Script node settings">        </a>            <a href="/img/Jax0qsfnN4-1189.jpeg" data-pswp-width="1189" data-pswp-height="733" target="_blank" style="text-decoration: none">          <img src="/img/Jax0qsfnN4-256.jpeg" alt="Switch node settings">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-crosr',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>Both the extracted PL data and the PO data are cross referenced using a script.</p>
+<details name="show_script">
+<summary>Click to show script.</summary>
+<pre class="language-javascript"><code class="language-javascript"><span class="token keyword">const</span> purchaseOrder <span class="token operator">=</span> <span class="token function">$</span><span class="token punctuation">(</span><span class="token string">"Get purchase order"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">first</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>json<span class="token punctuation">;</span>
+<span class="token keyword">const</span> packingList <span class="token operator">=</span> $input<span class="token punctuation">.</span><span class="token function">first</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>json<span class="token punctuation">;</span>
+<span class="token keyword">const</span> poLines <span class="token operator">=</span> purchaseOrder<span class="token punctuation">.</span>line_items<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token punctuation">{</span> sku<span class="token punctuation">,</span> quantity <span class="token punctuation">}</span></span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">(</span><span class="token punctuation">{</span>
+  sku<span class="token punctuation">,</span>
+  quantity<span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> plLines <span class="token operator">=</span> packingList<span class="token punctuation">.</span>line_items<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token punctuation">{</span> sku<span class="token punctuation">,</span> quantity <span class="token punctuation">}</span></span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">(</span><span class="token punctuation">{</span>
+  sku<span class="token punctuation">,</span>
+  quantity<span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> allLineResults <span class="token operator">=</span> poLines<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token punctuation">{</span> sku<span class="token punctuation">,</span> <span class="token literal-property property">quantity</span><span class="token operator">:</span> poQty <span class="token punctuation">}</span></span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> plItem <span class="token operator">=</span> plLines<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">item</span><span class="token punctuation">)</span> <span class="token operator">=></span> item<span class="token punctuation">.</span>sku <span class="token operator">===</span> sku<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> plQty <span class="token operator">=</span> plItem<span class="token operator">?.</span>quantity <span class="token operator">??</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token punctuation">{</span>
+    sku<span class="token punctuation">,</span>
+    <span class="token literal-property property">packed</span><span class="token operator">:</span> plQty <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token literal-property property">quantity</span><span class="token operator">:</span> plQty <span class="token operator">===</span> poQty<span class="token punctuation">,</span>
+    <span class="token literal-property property">quantityDiff</span><span class="token operator">:</span> plQty <span class="token operator">==</span> <span class="token keyword">null</span> <span class="token operator">?</span> <span class="token keyword">null</span> <span class="token operator">:</span> poQty <span class="token operator">-</span> plQty<span class="token punctuation">,</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> filteredLines <span class="token operator">=</span> allLineResults<span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>
+  <span class="token punctuation">(</span><span class="token parameter">line</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token operator">!</span>line<span class="token punctuation">.</span>packed <span class="token operator">||</span> <span class="token operator">!</span>line<span class="token punctuation">.</span>quantity<span class="token punctuation">,</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> skuCountMatched <span class="token operator">=</span> poLines<span class="token punctuation">.</span>length <span class="token operator">===</span> plLines<span class="token punctuation">.</span>length<span class="token punctuation">;</span>
+<span class="token keyword">const</span> skuTextMatched <span class="token operator">=</span> allLineResults<span class="token punctuation">.</span><span class="token function">every</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">item</span><span class="token punctuation">)</span> <span class="token operator">=></span> item<span class="token punctuation">.</span>packed<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> quantitiesMatched <span class="token operator">=</span> allLineResults<span class="token punctuation">.</span><span class="token function">every</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter">item</span><span class="token punctuation">)</span> <span class="token operator">=></span> item<span class="token punctuation">.</span>quantity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">return</span> <span class="token punctuation">[</span>
+  <span class="token punctuation">{</span>
+    <span class="token literal-property property">ok</span><span class="token operator">:</span> skuCountMatched <span class="token operator">&amp;&amp;</span> skuTextMatched <span class="token operator">&amp;&amp;</span> quantitiesMatched<span class="token punctuation">,</span>
+    skuCountMatched<span class="token punctuation">,</span>
+    skuTextMatched<span class="token punctuation">,</span>
+    quantitiesMatched<span class="token punctuation">,</span>
+    <span class="token literal-property property">diffLines</span><span class="token operator">:</span> filteredLines<span class="token punctuation">,</span>
+    plLines<span class="token punctuation">,</span>
+    poLines<span class="token punctuation">,</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">]</span><span class="token punctuation">;</span></code></pre>
+</details>
+<p>It returns a json with the following elements:</p>
+<ul>
+<li>ok: boolean indicating that the result was ok</li>
+<li>skuCountMatched: boolean indicating that the PO and PL have the same amount of SKUs</li>
+<li>skuTextMatched: boolean indicating that the text of the SKUs match</li>
+<li>quantitiesMatched: boolean indicating that the quantities per SKUs match</li>
+<li>diffLines: an array of the PO lines that aren't matched. It will show if the sku is packed (text matches), quantity matches. If the quantity does not match it will show the difference.</li>
+<li>poLines: an array of the processed PO lines</li>
+<li>plLines: an array of the processed PL lines</li>
+</ul>
+<p>Then the result is routed as follows:</p>
+<ul>
+<li>OK -&gt; completed branch</li>
+<li>SKU count is correct but SKUs mismatch -&gt; try <em>once</em> to find and heal OCR errors
+<ul>
+<li>Here I use <code>&amp;&amp; $prevNode.runIndex === 0</code> in the filter to enforce that the healing branch can only be triggered once.</li>
+</ul>
+</li>
+<li>Any other result -&gt; error branch</li>
+</ul>
+<p>For example:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"ok"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"skuCountMatched"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"skuTextMatched"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"quantitiesMatched"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"diffLines"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-HI"</span><span class="token punctuation">,</span>
+      <span class="token property">"packed"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+      <span class="token property">"quantityDiff"</span><span class="token operator">:</span> <span class="token null keyword">null</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"plLines"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"NJJ-6054-RM"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">34</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"VRD-9027-NG"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">330</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"JEX-2620-FB"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">236</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"YEX-9548-VJ"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">786</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"MTR-2076-XK"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">987</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-Hil"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">940</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"poLines"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"NJJ-6054-RM"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">34</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"VRD-9027-NG"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">330</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"JEX-2620-FB"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">236</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"YEX-9548-VJ"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">786</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"MTR-2076-XK"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">987</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-HI"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">940</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span></code></pre>
+<p>In the output above there is an OCR mistake for SKU RYD-4918-HI so it will be routed on to the healing agent.</p>
+<h3>7. Healing agent</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-heala" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/1GCaVlD5E3-515.jpeg" data-pswp-width="515" data-pswp-height="601" target="_blank" style="text-decoration: none">          <img src="/img/1GCaVlD5E3-256.jpeg" alt="Healing agent overview">        </a>            <a href="/img/caAdQl-tO1-1196.jpeg" data-pswp-width="1196" data-pswp-height="723" target="_blank" style="text-decoration: none">          <img src="/img/caAdQl-tO1-256.jpeg" alt="Agent settings">        </a>            <a href="/img/oRBNIgAUuV-1196.jpeg" data-pswp-width="1196" data-pswp-height="723" target="_blank" style="text-decoration: none">          <img src="/img/oRBNIgAUuV-256.jpeg" alt="Output parser">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-heala',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>An AI agent looks for OCR mistakes that can be healed. In this case it looks at the SKUs from the purchase order that didn't get matched in the packing list, figures out what a <em>normal</em> SKU is supposed to look like and then checks if any odd-looking packing-list codes are an OCR mistake.</p>
+<p>It uses the same model as the <em>Extraction Agent</em> but with a different system prompt:</p>
+<pre class="language-md"><code class="language-md">You are an OCR correction specialist for product codes and SKUs within structured JSON.
+
+<span class="token title important"><span class="token punctuation">###</span> Step 1 — Find candidates</span>
+
+Look in diffLines for any entry where packed is false.
+These are SKUs from poLines that were not matched in plLines.
+Each one is a candidate for an OCR error in plLines — the SKU may be present
+but under a corrupted key.
+
+Collect the list of unmatched SKUs. If none exist, set corrected to false and stop.
+Split into actualSku (the correct PO SKU) and misreadSku (the corrupted key found in plLines)
+
+<span class="token title important"><span class="token punctuation">###</span> Step 2 — Infer the SKU format</span>
+
+Using all codes visible across poLines and plLines together, identify the consistent
+pattern: segment count, separators, character class per segment (alpha / digit /
+alphanumeric), length per segment, casing convention.
+State the inferred format explicitly. Do not assume any format in advance.
+
+<span class="token title important"><span class="token punctuation">###</span> Step 3 — Find the corrupted key in plLines</span>
+
+For each unmatched SKU from Step 1:
+
+<span class="token list punctuation">-</span> Scan plLines for a key that is close to the expected SKU but deviates from the
+  inferred format (wrong length, wrong character class in a segment, mixed casing,
+  extra noise characters)
+<span class="token list punctuation">-</span> Apply OCR substitution rules to see if that key resolves to the unmatched SKU:
+
+  Letters misread as digits (apply in digit segments):
+  O→0 I→1 l→1 S→5 B→8 G→6 Z→2 g→9 q→9
+
+  Digits misread as letters (apply in alpha segments):
+  0→O 1→I 5→S 8→B 6→G 2→Z
+
+  Noise / merge errors:
+  Extra characters beyond expected segment length → remove
+  rn where m fits → merge
+  vv where w fits → merge
+
+<span class="token list punctuation">-</span> If a corrupted key heals to exactly the unmatched SKU, it is a confirmed OCR error.
+<span class="token list punctuation">-</span> If no candidate is found in plLines, the item may be genuinely missing — flag as corrected false and stop.</code></pre>
+<p>And it returns a structured output with candidate SKU's to be healed including the AI's reasoning. The reasoning behind this is twofold. First I like to use the AI for classification and extraction so that I can can process the output with validation / business rules in a deterministic way. Second, since this is an experimental example, I'd like to keep the AI's reasoning and output so that this can be used in the future to further improve the process.</p>
+<p>An example response:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"output"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"corrected"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+    <span class="token property">"candidates"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+      <span class="token punctuation">{</span>
+        <span class="token property">"actualSku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-HI"</span><span class="token punctuation">,</span>
+        <span class="token property">"misreadSku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-Hil"</span><span class="token punctuation">,</span>
+        <span class="token property">"format"</span><span class="token operator">:</span> <span class="token string">"3 letters - 4 digits - 2 letters (e.g., ABC-1234-DE)"</span><span class="token punctuation">,</span>
+        <span class="token property">"analysis"</span><span class="token operator">:</span> <span class="token string">"The unmatched SKU 'RYD-4918-HI' was found in poLines but not in plLines. Looking at the plLines, there is a key 'RYD-4918-Hil'. The format for all SKUs in this set is 3 letters - 4 digits - 2 letters (e.g., NJJ-6054-RM). The entry 'RYD-4918-Hil' contains an extra 'l' at the end of the final segment, which is a common OCR noise/merge error. Applying the rule to remove extra characters beyond expected segment length results in 'RYD-4918-HI'."</span><span class="token punctuation">,</span>
+        <span class="token property">"correction"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-Hil -> RYD-4918-HI"</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<h3>8. Heal OCR mistakes</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-healm" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/CsLhjdx23d-599.jpeg" data-pswp-width="599" data-pswp-height="603" target="_blank" style="text-decoration: none">          <img src="/img/CsLhjdx23d-256.jpeg" alt="Healing OCR overview">        </a>            <a href="/img/2wjSjYK9_K-1200.jpeg" data-pswp-width="1200" data-pswp-height="684" target="_blank" style="text-decoration: none">          <img src="/img/2wjSjYK9_K-256.jpeg" alt="Switch">        </a>            <a href="/img/REEKZ1X61z-1200.jpeg" data-pswp-width="1200" data-pswp-height="684" target="_blank" style="text-decoration: none">          <img src="/img/REEKZ1X61z-256.jpeg" alt="Log">        </a>            <a href="/img/OZHNqzuxjr-1200.jpeg" data-pswp-width="1200" data-pswp-height="931" target="_blank" style="text-decoration: none">          <img src="/img/OZHNqzuxjr-256.jpeg" alt="Script">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-healm',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>If there are candidates to heal:</p>
+<ul>
+<li>the log data table gets updated with the response of the AI healing agent</li>
+<li>a script fixes the misread SKUs in the extracted packing list data by looking up any <code>misreadSku</code> in the packing list and replacing it with the corresponding <code>actualSku</code> from the candidates.</li>
+<li>the <em>cross referencing</em> node is re-triggered.
+If there are no candidates then the error branch is triggered.</li>
+</ul>
+<p>Going on with the previous example, RYD-4918-Hil will be replaced with RYD-4918-HI in the extracted packing list:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"po_number"</span><span class="token operator">:</span> <span class="token string">"PO-40085"</span><span class="token punctuation">,</span>
+  <span class="token property">"pl_date"</span><span class="token operator">:</span> <span class="token string">"2026-03-07"</span><span class="token punctuation">,</span>
+  <span class="token property">"vendor"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"company_name"</span><span class="token operator">:</span> <span class="token string">"Stark Industries Ltd"</span><span class="token punctuation">,</span>
+    <span class="token property">"contact"</span><span class="token operator">:</span> <span class="token string">"Tony Stark"</span><span class="token punctuation">,</span>
+    <span class="token property">"email"</span><span class="token operator">:</span> <span class="token string">"tony@starkindustries.fakedomail"</span><span class="token punctuation">,</span>
+    <span class="token property">"address"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"address"</span><span class="token operator">:</span> <span class="token string">"8 Iron Street"</span><span class="token punctuation">,</span>
+      <span class="token property">"postal_code"</span><span class="token operator">:</span> <span class="token string">"D081X2Y"</span><span class="token punctuation">,</span>
+      <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">"Dublin"</span><span class="token punctuation">,</span>
+      <span class="token property">"country"</span><span class="token operator">:</span> <span class="token string">"Ireland"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"ship_to"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"company_name"</span><span class="token operator">:</span> <span class="token string">"ATE Commerce"</span><span class="token punctuation">,</span>
+    <span class="token property">"contact"</span><span class="token operator">:</span> <span class="token string">"Adam Tetz"</span><span class="token punctuation">,</span>
+    <span class="token property">"email"</span><span class="token operator">:</span> <span class="token string">"ate@commerce.fakedomail"</span><span class="token punctuation">,</span>
+    <span class="token property">"address"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"address"</span><span class="token operator">:</span> <span class="token string">"21 Rue Industriel"</span><span class="token punctuation">,</span>
+      <span class="token property">"postal_code"</span><span class="token operator">:</span> <span class="token string">"21000"</span><span class="token punctuation">,</span>
+      <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">"DIJON"</span><span class="token punctuation">,</span>
+      <span class="token property">"country"</span><span class="token operator">:</span> <span class="token string">"France"</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"line_items"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"NJJ-6054-RM"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Modern Vacuum Cleaner"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">34</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"VRD-9027-NG"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Vintage Headphones"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">330</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"JEX-2620-FB"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Professional Mouse"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">236</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"YEX-9548-VJ"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Portable Smartwatch"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">786</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"MTR-2076-XK"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Classic Keyboard"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">987</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"sku"</span><span class="token operator">:</span> <span class="token string">"RYD-4918-HI"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"Deluxe Jacket"</span><span class="token punctuation">,</span>
+      <span class="token property">"quantity"</span><span class="token operator">:</span> <span class="token number">940</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"notes"</span><span class="token operator">:</span> <span class="token string">"Place in dry location-keep away from rain"</span>
+<span class="token punctuation">}</span></code></pre>
+<h3>9. Completed</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-compl" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/I16pRDyThP-514.jpeg" data-pswp-width="514" data-pswp-height="334" target="_blank" style="text-decoration: none">          <img src="/img/I16pRDyThP-256.jpeg" alt="Completed overview">        </a>            <a href="/img/yGI6A4pNsN-1192.jpeg" data-pswp-width="1192" data-pswp-height="510" target="_blank" style="text-decoration: none">          <img src="/img/yGI6A4pNsN-256.jpeg" alt="Set log info">        </a>            <a href="/img/-yzuRsJ6qp-1192.jpeg" data-pswp-width="1192" data-pswp-height="510" target="_blank" style="text-decoration: none">          <img src="/img/-yzuRsJ6qp-256.jpeg" alt="Log and move">        </a>            <a href="/img/E4cREsIcMZ-640.jpeg" data-pswp-width="640" data-pswp-height="157" target="_blank" style="text-decoration: none">          <img src="/img/E4cREsIcMZ-256.jpeg" alt="Log and move subflow">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-compl',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>Extraction and cross referencing has been completed and the result can now be used downstream to create a goods receipt.
+The completion is logged and the file is moved to the completed folder using a two part <em>log and move</em> mechanism.</p>
+<ol>
+<li>Sets the data needed for the log: file path, status and details.</li>
+<li>Triggers a sub-workflow that updates the data table and moves the file using an <em>Execute Command</em> node.</li>
+</ol>
+<h3>Log errors and move file</h3>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-err" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/KPgyJOp_Kl-1539.jpeg" data-pswp-width="1539" data-pswp-height="334" target="_blank" style="text-decoration: none">          <img src="/img/KPgyJOp_Kl-256.jpeg" alt="Error overview">        </a>            <a href="/img/TK-zDY_fWe-1196.jpeg" data-pswp-width="1196" data-pswp-height="514" target="_blank" style="text-decoration: none">          <img src="/img/TK-zDY_fWe-256.jpeg" alt="Set log info">        </a>            <a href="/img/iNO_5U7srt-1196.jpeg" data-pswp-width="1196" data-pswp-height="472" target="_blank" style="text-decoration: none">          <img src="/img/iNO_5U7srt-256.jpeg" alt="Log and move">        </a>            <a href="/img/E4cREsIcMZ-640.jpeg" data-pswp-width="640" data-pswp-height="157" target="_blank" style="text-decoration: none">          <img src="/img/E4cREsIcMZ-256.jpeg" alt="Log and move subflow">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-err',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p>In case of any validation / rule error the workflow is routed to <em>Log errors and move file</em> using the same log and move mechanism as above.</p>
+<h3>Giving it a spin</h3>
+<p>Let's test out the 4 files from part 1.</p>
+<ul>
+<li>
+<p>1 page packing list for ACME Corp Europe (PO-33959-singlepage-ups-300dpi.pdf)</p>
+</li>
+<li>
+<p>2 page packing list for ACME Corp Europe (PO-26076-multipage-ups-300DPI.pdf)</p>
+</li>
+<li>
+<p>2 page packing list for ACME with some errors (PO-26076-multipage-err-ups-300dpi.pdf)</p>
+</li>
+<li>
+<p>2 page packing list for Stark Industries Ltd (PO-40085-fedex-300dpi.pdf)</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-n8n-spin" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/xbj1d0cxYo-638.jpeg" data-pswp-width="638" data-pswp-height="153" target="_blank" style="text-decoration: none">          <img src="/img/xbj1d0cxYo-256.jpeg" alt="files in pending">        </a>            <a href="/img/k96fyd7dZL-649.jpeg" data-pswp-width="649" data-pswp-height="405" target="_blank" style="text-decoration: none">          <img src="/img/k96fyd7dZL-256.jpeg" alt="Executions">        </a>            <a href="/img/g6xZV3y7k6-1659.jpeg" data-pswp-width="1659" data-pswp-height="396" target="_blank" style="text-decoration: none">          <img src="/img/g6xZV3y7k6-256.jpeg" alt="Log Table">        </a>            <a href="/img/31YuBmVRRe-633.jpeg" data-pswp-width="633" data-pswp-height="423" target="_blank" style="text-decoration: none">          <img src="/img/31YuBmVRRe-256.jpeg" alt="error folder">        </a>            <a href="/img/s8le15g6yR-633.jpeg" data-pswp-width="633" data-pswp-height="423" target="_blank" style="text-decoration: none">          <img src="/img/s8le15g6yR-256.jpeg" alt="completed folder">        </a>            <a href="/img/Ktuoo1y0zp-2000.jpeg" data-pswp-width="2000" data-pswp-height="1060" target="_blank" style="text-decoration: none">          <img src="/img/Ktuoo1y0zp-256.jpeg" alt="error details">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-n8n-spin',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+</li>
+</ul>
+<p>After dropping all testfiles in the <em>pending</em> folder it's easy to track the progress of the workflow by opening up the <em>executions tab</em>. Once all executions were done I opened up the data table to see the logs that were created.</p>
+<ul>
+<li>PO-33959-singlepage-ups-300dpi.pdf &amp; PO-26076-multipage-ups-300DPI.pdf completed in the first run.</li>
+<li>PO-26076-multipage-err-ups-300dpi.pdf failed because of a quantity mismatch. This file also included the swapped column from part 1 which turned out not to be an issue.</li>
+<li>PO-40085-fedex-300dpi.pdf needed to self heal because of an OCR error in the SKU (this is the example used throughout this post).</li>
+</ul>
+<p>The files were also successfully moved to their corresponding path and the error log showed exactly which SKU had a quantity mismatch and by how much.</p>
+<h2>Conclusion</h2>
+<p>Having built and tested a proof of concept to extract and cross reference PDF documents, it's time to look back at the original research question:</p>
+<blockquote>
+How reliably can an LLM based system for document extraction reduce the need for human intervention when the template changes?</blockquote>
+<p>The short answer is <em>yes, with a few catches</em>!</p>
+<p>Within this context I think that there is a good use case for using AI locally to build a data extraction pipeline for documents. It speeds up processing and can auto-heal common OCR errors without sending documents anywhere. LLMs are great at extraction and classification but the decisions are still made by deterministic rules. Having said that, I don't think this eliminates human intervention completely. At least, not yet.</p>
+<p>A few catches from building this solution:</p>
+<ul>
+<li>The healing step only triggers once. If a file needs more than one correction pass, it goes straight to the error branch instead of getting a second attempt.</li>
+<li>This solution only catches OCR-style text mistakes, not quantity mismatches. Depending on the context those could be addressed further downstream or by a human in the loop.</li>
+<li>The healing agent leans on the assumption that there are plenty of common OCR failure patterns in the models training data. I haven't tested how well it holds up on other document types outside what I used here.</li>
+<li>There's also the error pile itself. Failed files are logged but there is no system in place do something with them. Ideally a review system should be built on top of this to make it workable in production: a review app or a daily alert with a report to check the errors manually.</li>
+</ul>
+<p>That wraps up this series!</p>
+<p>If you've got thoughts, questions, or you've hit similar problems with a different approach, I'd genuinely like to hear about it.
+And if you're dealing with something like this yourself, this is exactly the kind of problem I love to work on. Get in touch and let's talk about what that could look like for you.</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container">
+        <small>© Adam Tetz 2026 </small>
+      </div>
+    </footer>
+  </body>
+</html>
