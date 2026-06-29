@@ -7,6 +7,8 @@ import sharp from "sharp";
 const DEFAULT_GALLERY_IMAGE_WIDTH = 200;
 const LANDSCAPE_LIGHTBOX_IMAGE_WIDTH = 2000;
 const PORTRAIT_LIGHTBOX_IMAGE_WIDTH = 720;
+const BOOKING_PAGE_URL =
+  "https://calendar.proton.me/bookings#QUeu-rxgCWl_HFtCzu8KkJSKQsp-9i_VOtG7RS9bvL8=";
 
 async function galleryImageShortcode(
   src,
@@ -194,7 +196,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addShortcode("scheduleButton", function () {
     return `<div class="contactButton"><a
     role="button"
-    href="https://calendly.com/adam-data-integration"
+    href=${BOOKING_PAGE_URL}
     >Schedule a meeting</a></div>`;
   });
 }
