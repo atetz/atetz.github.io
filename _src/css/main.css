@@ -147,6 +147,20 @@ h1 {
   padding: var(--pico-block-spacing-vertical);
 }
 
+.logoRow img {
+  height: 5rem;
+  width: auto;
+}
+
+.logoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pico-block-spacing-horizontal);
+  padding: var(--pico-block-spacing-vertical);
+}
+
 .floatLeft {
   float: left;
   margin-right: var(--pico-block-spacing-vertical);

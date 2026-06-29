@@ -5,15 +5,30 @@ eleventyNavigation:
   order: 1
 ---
 
-## Hi, I'm Adam Tetz!
+## Adam Tetz - Freelance integration consultant
 
-I help businesses run more efficiently by connecting their systems and making sense of their data across two areas:
+I help businesses run more efficiently by connecting their systems and making sense of their data.
 
-- **Multi-system workflow automation**: I eliminate manual errors and delays by designing seamless multi-system workflows. This directly reduces your operating costs and minimises risk.
-- **Data insight**: I gather clear insights from across your different data sources. This empowers you to make smarter decisions that improve your organisation's performance.
+- Application integration
+- Agent & workflow automation
+- Data transformation & insight
 
-With 14 years in IT, from sysadmin and application management to integration consultancy, I bring both technical depth and business understanding to every project. That combination means I diagnose problems accurately and deliver solutions that actually stick.
-I'm not tied to a single tool and leverage Fluxygen, n8n or AWS & Azure services where they're a good fit.
+Platforms I work with:
+
+<div class="logoRow">
+  <a href="https://fluxygen.com/">
+    <img src="/assets/images/home/fluxygen.png" alt="Fluxygen">
+  </a>
+  <a href="https://n8n.io/">
+    <img src="/assets/images/home/n8n.png" alt="n8n">
+  </a>
+  <a href="https://azure.microsoft.com/">
+    <img src="/assets/images/home/azure.png" alt="Azure">
+  </a>
+  <a href="https://aws.amazon.com/">
+    <img src="/assets/images/home/aws.png" alt="AWS">
+  </a>
+</div>
 
 #### Currently available for remote freelance projects!
 
