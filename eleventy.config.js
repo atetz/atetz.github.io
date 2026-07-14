@@ -8,7 +8,7 @@ const DEFAULT_GALLERY_IMAGE_WIDTH = 200;
 const LANDSCAPE_LIGHTBOX_IMAGE_WIDTH = 2000;
 const PORTRAIT_LIGHTBOX_IMAGE_WIDTH = 720;
 const BOOKING_PAGE_URL =
-  "https://calendar.proton.me/bookings#QUeu-rxgCWl_HFtCzu8KkJSKQsp-9i_VOtG7RS9bvL8=";
+  "https://calendar.proton.me/bookings#nqupVQ3i8By-mFqbn-dojE3uJmmO-M4Yszv4HADhPeI=";
 
 async function galleryImageShortcode(
   src,
