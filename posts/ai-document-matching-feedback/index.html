@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Was my AI document matching solution in n8n too rigid?</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/about/">About</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small><i>Freelance integration consultant living in Burgundy, France.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      Was my AI document matching solution in n8n too rigid?
+    </h2>
+    <p>September 7, 2026</p>
+</hgroup>
+  <p>This post continues from a series where I explore reliable data extraction from documents with AI. Did you miss the series? Don't worry, you can read it <a href="/blog" target="_self">here</a>!</p>
+<p>Sometimes I get feedback on the posts I write and this makes writing them a lot more fun. Because what is the point of sharing your ideas and learnings if they would just disappear into a black void?</p>
+<p>After the AI document matching series I got an e-mail from someone out of my network who liked the series a lot and followed along, but he also wondered if I hadn't been a bit too rigid in my n8n solution.
+<picture><source type="image/avif" srcset="/img/kUX89G2tTb-300.avif 300w, /img/kUX89G2tTb-587.avif 587w" sizes="auto"><source type="image/webp" srcset="/img/kUX89G2tTb-300.webp 300w, /img/kUX89G2tTb-587.webp 587w" sizes="auto"><img loading="lazy" decoding="async" src="/img/kUX89G2tTb-300.png" alt="Perfect solution meme" class="centerImage" width="587" height="391" srcset="/img/kUX89G2tTb-300.png 300w, /img/kUX89G2tTb-587.png 587w" sizes="auto"></picture></p>
+<p><strong>Too rigid, me? Never!</strong></p>
+<p>Remember that I used an AI agent for transforming markdown to a canonical object that is then cross referenced via a script? Well, his main concern was whether the script would still be a viable solution if the data to compare grew. Or would the script become unmanageable? It also fails if some fields don't match perfectly. In some real world cases fields use abbreviations or terms that mean the same things. Which means that the script should ultimately be extended with data mappings to deal with such things. And still that won't map fields with manual input data (yes in 2026 that is still a lot around). Quickly that small script could become a project on its own...</p>
+<p>Slowly but surely, fuzzy requirements are creeping in...</p>
+<p>He asked himself the following question: Would the agent be more suitable for cross referencing? So he built an alternative proof of concept with <em>Claude Code</em>. In essence he first created testcases using my blog posts and testfiles. Then he worked on alternative prompts for a <em>Matching Agent</em> and verified them with his test suite. He even added some extra checks that verified fuzzy differences in addresses (like the Dublin 8 vs Dublin examples we saw in the previous parts).</p>
+<h4>An LLM can do everything. But should I let it?</h4>
+<p>So the quick answer is ultimately yes. LLMs can do this too. But the answer to <em>should I let it?</em> is: <em>it depends!</em> as usual. There are always trade-offs that should be evaluated for the specific situation. In my example I gave in to the urge to keep the steps in between AI nodes as deterministic as possible so that I have structured data to work with. For this use case it might have seemed rigid but at the same time simple. Everything had to match exactly.</p>
+<p>Summer came along and as usual for me projects wind down a bit. I decided to check out n8n's new <a href="https://learn.n8n.io/">academy material</a> and thought about my feedback a bit more. It was cool to see someone read my posts and build something with it. So why not build on that idea with n8n?</p>
+<p>I'm not going to summarise all the course info here, I recommend you check it out yourself, but there were some nuggets that stood out. Sometimes these supported my solution and other times I came to the conclusion that I could have used something else.</p>
+<ol>
+<li>The material explains when to go for an <em>Agent node</em> and when to use a simple <em>AI node</em>. Since my <em>Extraction Agent</em> did not need any tools or memory I could have better picked the <em>AI node</em> with less overhead. The extraction agent got demoted to a <em>Basic LLM Chain</em> node named <em>Extraction prompt</em>!</li>
+<li>I was <em>very tempted</em> to create a new <em>Matching Agent</em> after learning that you can plug anything* into one with n8n to finish more complex tasks. My idea was to give it tools to get the purchase order directly and use the former <em>Healing Agent</em> capabilities from part 3. But in the end I realised that this would add unnecessary overhead and I ended up swapping the <em>AI agent</em> for the <em>Basic LLM Chain</em> node named <em>Cross reference prompt</em>.
+<small>* tool calling, other workflows, memory, and context management</small></li>
+</ol>
+<p>Here's an alternative AI version:
+<link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-alternative" style="grid-template-columns: repeat(1, 1fr);">                        <a href="/img/pWl3iUxlIl-2000.jpeg" data-pswp-width="2000" data-pswp-height="344" target="_blank" style="text-decoration: none">          <img src="/img/pWl3iUxlIl-1600.jpeg" alt="Alternative flow">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-alternative',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+<p><small>If you want to try it out or check the prompts, you can find an export of this flow in my <a href="https://github.com/atetz/n8n-templates/tree/main/ai-document-matching">repo</a>. Look for <em><code>template-ai-alternative.json</code></em>. The original version from part 3 was also published as an n8n template that you can find <a href="https://n8n.io/workflows/16825-match-packing-list-pdfs-to-purchase-orders-with-docling-serve-and-ollama/">here</a>.</small></p>
+<p>This solution worked 5 times in a row with all the test files without errors. So far so good! We have the same behaviour. However when I looked at the execution time and token usage I read a different story:</p>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Token cost original</th>
+<th>Token cost alternative</th>
+<th>Execution time original</th>
+<th>Execution time alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 page PL ACME</td>
+<td>~1046</td>
+<td>~5127</td>
+<td>45.096s</td>
+<td>1m 29.667s</td>
+</tr>
+<tr>
+<td>2 page PL ACME</td>
+<td>~1226</td>
+<td>~5864</td>
+<td>1m 3.112s</td>
+<td>1m 49.111s</td>
+</tr>
+<tr>
+<td>2 page PL ACME (w. errors)</td>
+<td>~1218</td>
+<td>~8043</td>
+<td>51.816s</td>
+<td>2m 32.044s</td>
+</tr>
+<tr>
+<td>2 page PL Stark (w. sku healing)</td>
+<td>~2299</td>
+<td>~12754</td>
+<td>1m 19.725s</td>
+<td>4m 6.109s</td>
+</tr>
+</tbody>
+</table>
+<p><small> Using Mac M1, Ollama with gemma4:12b-mlx </small></p>
+<p>Letting an LLM do everything increases the token costs about 5 times and multiplies the execution time by 2 for the clean packing lists. This gap gets wider for the messier cases where we <em>need</em> an LLM to help. The file with input errors burns almost 7 times the tokens and the Stark file with SKU healing triples the time.</p>
+<p>The token cost is locally less visible in money than using a provider with a per token model. But it's no secret that AI uses a lot of power so I feel we should use it wisely. Adding more AI in this case also means adding more time to the process. It also trades in a deterministic step for a non deterministic one. LLMs can occasionally return a different answer on identical input which makes me feel a bit uncomfortable...</p>
+<p>Having said that, the LLM could be a lot more capable of handling edge cases and innocent input errors. This could in turn reduce the maintenance burden of a script. Another option is to keep the script but have AI maintain it, which is cheaper at runtime since you're not burning extra tokens on every workflow execution. I'd rather spend an hour of AI assisted development on maintaining the solution than spending 5× the tokens on every execution forever.</p>
+<h4>So, was my solution in n8n too rigid?</h4>
+<picture><source type="image/avif" srcset="/img/b0PSG2r9hq-300.avif 300w, /img/b0PSG2r9hq-600.avif 600w" sizes="auto"><source type="image/webp" srcset="/img/b0PSG2r9hq-300.webp 300w, /img/b0PSG2r9hq-600.webp 600w" sizes="auto"><source type="image/png" srcset="/img/b0PSG2r9hq-300.png 300w, /img/b0PSG2r9hq-600.png 600w" sizes="auto"><img loading="lazy" decoding="async" src="/img/b0PSG2r9hq-300.jpeg" alt="Calculating meme" class="centerImage" width="600" height="396" srcset="/img/b0PSG2r9hq-300.jpeg 300w, /img/b0PSG2r9hq-600.jpeg 600w" sizes="auto"></picture>
+<p>For this use case I'd keep the hybrid approach that uses the script to deterministically match most cases and calls on AI to help resolve the edge cases. The tokens I save per execution give me a good budget to spend on maintaining it and keeping it faster.</p>
+<p>That's it for now! As always, if you have any thoughts or feedback about the ideas in this post then I'm happy to hear from you!</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container">
+        <small>© Adam Tetz 2026 </small>
+      </div>
+    </footer>
+  </body>
+</html>
