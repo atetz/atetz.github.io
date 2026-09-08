@@ -10,8 +10,8 @@ eleventyNavigation:
 I help businesses run more efficiently by connecting their systems and making sense of their data.
 
 - Application integration
-- Agent & workflow automation
-- Data transformation & insight
+- AI & workflow automation
+- Data pipelines & analytics
 
 Platforms I work with:
 
