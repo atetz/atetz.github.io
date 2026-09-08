@@ -5,7 +5,7 @@ eleventyNavigation:
   order: 1
 ---
 
-## Adam Tetz - Freelance integration consultant
+## Adam Tetz - Integration consultant
 
 I help businesses run more efficiently by connecting their systems and making sense of their data.
 
@@ -30,6 +30,6 @@ Platforms I work with:
   </a>
 </div>
 
-#### Currently available for remote freelance projects!
+#### Currently available for remote projects!
 
 {% scheduleButton %}
