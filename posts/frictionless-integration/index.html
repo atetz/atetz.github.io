@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration should be frictionless for agents to build and for you to manage</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/about/">About</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small><i>Integration consultant living in Burgundy, France.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      Integration should be frictionless for agents to build and for you to manage
+    </h2>
+    <p>October 12, 2026</p>
+</hgroup>
+  <p>Lately I have been thinking about integration in the light of AI. It goes without saying that AI would be quite limited without proper integration. All the tooling needed in agentic workflows relies on proper integration patterns under the hood. At the same time I think that integration solutions will also become limited if they can't be leveraged by AI fully. Meaning that the platform's visual designer becomes something you use to look at a workflow and not to build it. The platform itself gives you the oversight, monitoring and tools for fine-tuning but most of the building itself gets done by agents and deterministic tools around those agents.</p>
+<p>Since our domain is a subset of software engineering it's inevitable that agentic development is coming for integration work too. And it doesn't matter what platform or technology you're using. The ones that will work frictionlessly with AI are the ones that are going to stay.</p>
+<p>So what does this new era mean for our integration domain? I came across a <a href="https://www.youtube.com/watch?v=28C8LU7KlBU">very interesting talk</a> at Integrate 2026 by Rob Hofman. In a nutshell, the integration developer becomes an architect and stays firmly in the driver's seat while the agents do the building. How? By writing down the integration conventions we know and applying agentic development standards to them. In his talk Rob shares his workflow that covers the whole stack on Azure.</p>
+<p>Another example is <a href="https://github.com/n8n-io/skills#official-n8n-skills">n8n's skills</a> that let users create workflows with their favourite harness via the MCP server. And in the Apache Camel space I came across <a href="https://github.com/luigidemasi/camel-kit">camel-kit</a> that guides users along the full integration lifecycle: from designing the integration, through implementation and testing, to runtime verification.</p>
+<p>The underlying pattern is generally the same: write down the conventions and let the agents build. I cross-referenced camel-kit and n8n's skills, and the flow they share looks a bit like this:</p>
+<p><picture><source type="image/avif" srcset="/img/OV7YpESRtf-500.avif 500w"><source type="image/webp" srcset="/img/OV7YpESRtf-500.webp 500w"><img loading="lazy" decoding="async" src="/img/OV7YpESRtf-500.png" alt="MRA screenshot" class="centerImage" width="500" height="773"></picture></p>
+<ol>
+<li>Understand the goal - an agent interviews or grills the idea relentlessly until it's clear.</li>
+<li>You confirm the goal</li>
+<li>Break it down - The goal gets broken down into small verifiable pieces</li>
+<li>Get ready - set up the tools and access.</li>
+<li>You provide access</li>
+<li>Build - one piece at a time.</li>
+<li>Check - Does it do what we agreed?</li>
+<li>You give the go-ahead when all checks have passed.</li>
+<li>Release it</li>
+<li>Hand it over - how to use and manage it.</li>
+</ol>
+<p>So the AI agents only start building once the idea and goal are understood and agreed upon. Then they work towards that goal in small manageable steps. If a check fails then the cause needs to be fixed. And if the cause is that the goal itself was unclear to begin with, the flow restarts at step 1. Even though the agents do most of the work there's a human in the loop for the most important parts: deciding the goal, giving access, deciding when it goes live.</p>
+<p>In the next post I'm going to share what happened when I let <a href="https://github.com/luigidemasi/camel-kit">camel-kit</a> loose on my <a href="https://github.com/atetz/integration-sandbox">integration sandbox</a>.</p>
+<p>Have you been leveraging AI to build integrations? Let me know what your experiences are!</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container">
+        <small>© Adam Tetz 2026 </small>
+      </div>
+    </footer>
+  </body>
+</html>
