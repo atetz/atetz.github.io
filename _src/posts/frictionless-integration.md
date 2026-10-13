@@ -36,3 +36,5 @@ So the AI agents only start building once the idea and goal are understood and a
 In the next post I'm going to share what happened when I let [camel-kit](https://github.com/luigidemasi/camel-kit) loose on my [integration sandbox](https://github.com/atetz/integration-sandbox).
 
 Have you been leveraging AI to build integrations? Let me know what your experiences are!
+
+<small>This article was written with the assistance of AI. </small>

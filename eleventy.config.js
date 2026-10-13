@@ -35,6 +35,10 @@ async function galleryImageShortcode(
     widths: [previewWidth, lightboxImageWidth],
     urlPath: "/img/",
     outputDir: this.eleventy.directories.output + "/img/",
+    // JPEG has no alpha channel, so transparent pixels would turn black
+    transform: (sharp) => {
+      sharp.flatten({ background: "#ffffff" });
+    },
   };
 
   const genMetadata = await Image(src, options);
