@@ -92,3 +92,5 @@ Thumbs.db
 *.obsidian*
 _site/
 _site/*
+# LinkedIn drafts in progress (see .claude/skills/linkedin-article)
+.linkedin/

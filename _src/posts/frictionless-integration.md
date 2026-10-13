@@ -1,13 +1,14 @@
 ---
 title: Integration should be frictionless for agents to build and for you to manage
 date: 2026-10-12
+linkedin: https://www.linkedin.com/pulse/integration-should-frictionless-agents-build-you-manage-adam-tetz-bqube/
 ---
 
 Lately I have been thinking about integration in the light of AI. It goes without saying that AI would be quite limited without proper integration. All the tooling needed in agentic workflows relies on proper integration patterns under the hood. At the same time I think that integration solutions will also become limited if they can't be leveraged by AI fully. Meaning that the platform's visual designer becomes something you use to look at a workflow and not to build it. The platform itself gives you the oversight, monitoring and tools for fine-tuning but most of the building itself gets done by agents and deterministic tools around those agents.
 
 Since our domain is a subset of software engineering it's inevitable that agentic development is coming for integration work too. And it doesn't matter what platform or technology you're using. The ones that will work frictionlessly with AI are the ones that are going to stay.
 
-So what does this new era mean for our integration domain? I came across a [very interesting talk](https://www.youtube.com/watch?v=28C8LU7KlBU) at Integrate 2026 by Rob Hofman. In a nutshell, the integration developer becomes an architect and stays firmly in the driver's seat while the agents do the building. How? By writing down the integration conventions we know and applying agentic development standards to them. In his talk Rob shares his workflow that covers the whole stack on Azure.
+So what does this new era mean for our integration domain? I came across a [very interesting talk](https://www.youtube.com/watch?v=28C8LU7KlBU) from Integrate 2026 by Rob Hofman. In a nutshell, the integration developer becomes an architect and stays firmly in the driver's seat while the agents do the building. How? By writing down the integration conventions we know and applying agentic development standards to them. In his talk Rob shares his workflow that covers the whole stack on Azure.
 
 Another example is [n8n's skills](https://github.com/n8n-io/skills#official-n8n-skills) that let users create workflows with their favourite harness via the MCP server. And in the Apache Camel space I came across [camel-kit](https://github.com/luigidemasi/camel-kit) that guides users along the full integration lifecycle: from designing the integration, through implementation and testing, to runtime verification.
 
