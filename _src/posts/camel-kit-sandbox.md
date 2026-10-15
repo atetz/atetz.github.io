@@ -105,3 +105,5 @@ All in all I think this is a great project. The interview style appealed to me b
 It might even be a story that we can investigate with the help of some agents…
 
 What do you think of this kind of content? I'd love to [hear your thoughts](https://data-integration.dev/contact/)! And if your team could use a hand with an integration project, I'm available for freelance work.
+
+<small>This article was written with the assistance of AI. </small>
