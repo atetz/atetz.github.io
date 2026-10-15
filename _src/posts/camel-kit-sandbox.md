@@ -100,7 +100,7 @@ Can someone other than me read and understand the specs, routes and decisions? W
 If I were an organisation looking to migrate from BizTalk or Mule I'd definitely add it to my list of options to research.
 
 ### The future
-All in all I think this is a great project. The interview style appealed to me because it came up with questions like: what clears a shipment's new state? Immediately challenging the design I pasted in and landing on a hole I left out. And I think it shows where our industry is heading. Does this mean that any non-technical user can develop integrations now? I don't think so. camel-kit holds your hand and asks you all the questions, but you still need to provide the answers. You also need to provide the environment where the integrations run. And that is a whole other story. 
+All in all I think this is a great project. The interview style appealed to me because it came up with questions like: what clears a shipment's new state? Immediately challenging the design I pasted in and addressing a hole I left. And I think it shows where our industry is heading. Does this mean that any non-technical user can develop integrations now? I don't think so. camel-kit holds your hand and asks you all the questions, but you still need to provide the answers. You also need to provide the environment where the integrations run. And that is a whole other story. 
 
 It might even be a story that we can investigate with the help of some agents…
 
