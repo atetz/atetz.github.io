@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Camel integrations with AI agents and camel-kit!</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/about/">About</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small><i>Integration consultant living in Burgundy, France.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      Building Camel integrations with AI agents and camel-kit!
+    </h2>
+    <p>October 15, 2026</p>
+</hgroup>
+  <p>A tool that caught my eye recently is <a href="https://github.com/luigidemasi/camel-kit">camel-kit</a> by <a href="https://github.com/luigidemasi">Luigi De Masi</a>, an Apache Camel committer. It promises to guide users along the full lifecycle of building <a href="https://camel.apache.org/">Apache Camel</a> integrations: from designing the integration, through implementation and testing, to runtime verification.</p>
+<p>DISCLAIMER: I was very biased to try this out because of two reasons:</p>
+<ul>
+<li>I've been using and liking Camel's patterns for years, so I was curious to find out what the result would be</li>
+<li>The project's logo is a beacon to my inner child (Knight Rider's KITT!)</li>
+</ul>
+<img src="/assets/images/camel-kit-sandbox/camel-kit.gif" alt="camel-kit logo" width="629" height="525" class="centerImage">
+<p>How does it work? In a nutshell camel-kit is a CLI tool that installs agent skills into your project. You can then use your favourite coding agent like Claude Code or IBM Bob to start building. There are two main paths to follow:</p>
+<ul>
+<li>Guided migration of existing MuleSoft/BizTalk/Fuse/Camel integrations.</li>
+<li>Start a new greenfield integration project.</li>
+</ul>
+<h3>Setting up the experiment</h3>
+<p>For this experiment I wanted to start fresh and test how camel-kit would handle building integrations for my <a href="https://github.com/atetz/integration-sandbox">integration sandbox</a> so I chose to follow the greenfield path.</p>
+<p><small>A quick refresher: the integration sandbox is a REST API that lets users test two integration flows:</small></p>
+<ul>
+<li>Pull, transform and send outbound orders.</li>
+<li>Receive, transform and send inbound events.
+The API endpoints validate if the user is authenticated and if the message was correctly transformed.
+</li>
+</ul>
+<p>After <a href="https://github.com/luigidemasi/camel-kit/tree/3b796c31db85ecab524ad761f4b45f0105cfe119#install-041-camel-jbang-plugin">installing</a> camel-kit 0.4.1 as a JBang plugin I fired it up in a new project directory:</p>
+<p><code>camel kit init greenfield --ai claude</code></p>
+<p>And then I started Claude Code with Opus 5.5 in the same directory and triggered the <code>/camel-brainstorm</code> skill to kick off the greenfield path.</p>
+<p>I asked it to build integrations for my integration sandbox project, pointed it to a locally running instance of the container and pasted in the <a href="https://github.com/atetz/integration-sandbox/tree/main/docs/integrations">integration documentation</a>. It immediately found the OpenAPI spec and pulled in all endpoint metadata.</p>
+<p>What followed was an interview of 14 questions that gathered the details of the landscape, requirements and design decisions. Think of questions like:</p>
+<ul>
+<li>What's the business purpose of this integration?</li>
+<li>What problem does it solve?</li>
+<li>Who benefits from the solution?</li>
+</ul>
+<p>And deeper technical questions about a specific flow like:</p>
+<ul>
+<li>After Flow 1 gets <code>202</code> from <code>POST /broker/order</code>, what clears the shipment's <code>new</code> state?</li>
+</ul>
+<p>After 14 question rounds, of which 4 were sent back for clarification, I got a <a href="https://github.com/atetz/ck-integration-sandbox/blob/main/docs/camel-kit/001-tms-shipments-broker-orders/design-spec.md">design spec</a> to review and approve.</p>
+<p>Funnily enough it also tried to browse to my repository folder outside of the project that contains the source code of the APIs. <strong>Sorry boss!</strong> We rarely have access to source code of the APIs we're integrating in the real world. I had to deny that request...</p>
+<p>The design looked alright, but I noticed that Claude had put credentials directly in the config:</p>
+<pre><code>Claude: Do you approve this design?
+Adam: Should credentials not be in env vars?
+
+Claude: A fair challenge. The spec _said_ env vars in prose, but the properties block still listed `sandbox.client.id=CHANGEME` — which invites exactly the mistake of filling it in and committing it. 
+</code></pre>
+<p>When that was cleared and I approved the spec, it carried on breaking the design down into manageable tasks with <code>/camel-plan</code>. It then generated the code with <code>/camel-execute</code> and verified the quality with <code>/camel-validate</code>.</p>
+<h3>The result</h3>
+<p>So what did it produce? Per flow it created:</p>
+<ul>
+<li>
+<p>a YAML file containing the Camel routes, including the error handling</p>
+</li>
+<li>
+<p>a data mapper in Groovy (which I requested)</p>
+</li>
+<li>
+<p><a href="https://citrusframework.org/">Citrus</a> integration tests</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-camelKitFlows" style="grid-template-columns: repeat(4, 1fr);">                        <a href="/img/VvaoXhID7Y-2000.jpeg" data-pswp-width="2000" data-pswp-height="1062" target="_blank" style="text-decoration: none">          <img src="/img/VvaoXhID7Y-400.jpeg" alt="TMS shipment to broker order flow.">        </a>            <a href="/img/9KZ3C41XLu-681.jpeg" data-pswp-width="681" data-pswp-height="1085" target="_blank" style="text-decoration: none">          <img src="/img/9KZ3C41XLu-400.jpeg" alt="TMS shipment to broker order error handling.">        </a>            <a href="/img/l03Zj1y_a1-1733.jpeg" data-pswp-width="1733" data-pswp-height="941" target="_blank" style="text-decoration: none">          <img src="/img/l03Zj1y_a1-400.jpeg" alt="Broker event to TMS event flow.">        </a>            <a href="/img/bRXH7DSPov-720.jpeg" data-pswp-width="720" data-pswp-height="1000" target="_blank" style="text-decoration: none">          <img src="/img/bRXH7DSPov-400.jpeg" alt="Broker event to TMS event error handling.">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-camelKitFlows',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+</li>
+</ul>
+<p>Screenshots are from the <a href="https://kaoto.io/">Kaoto</a> designer, which also comes as a VS Code plugin.</p>
+<p>I spot-checked the Groovy mappers and the Citrus test suite. They were readable and looked good to me. The Citrus tests ran as part of the process, so by the time I got the code they were already passing. I still ran the routes against the sandbox myself:</p>
+<pre class="language-bash"><code class="language-bash">jbang camel@apache/camel run <span class="token punctuation">\</span>
+  tms-shipment-to-broker-order.camel.yaml <span class="token punctuation">\</span>
+  broker-event-to-tms-event.camel.yaml <span class="token punctuation">\</span>
+  ShipmentToBrokerOrderMapper.groovy RejectedShipments.groovy BrokerEventToTmsEventMapper.groovy <span class="token punctuation">\</span>
+  --camel-version<span class="token operator">=</span><span class="token number">4.22</span>.1 <span class="token punctuation">\</span>
+  <span class="token parameter variable">--properties</span><span class="token operator">=</span>application.properties</code></pre>
+<p>And I used the sandbox's seed and trigger features to check whether it worked:</p>
+<ul>
+<li>
+<p>first seed 3 shipments</p>
+</li>
+<li>
+<p>after they were processed I triggered 3 events</p>
+<p><link rel="stylesheet" href="/css/photoswipe/photoswipe.css">				<style>					.eleventy-plugin-gallery {						display: grid;						column-gap: 0.3rem;						row-gap: 0.3rem;						align-items: center;					}					.eleventy-plugin-gallery a &gt; img {						width: 100%;						height: 100%;					}					</style>        </p><div>            <div class="eleventy-plugin-gallery" id="gallery-terminalOutput" style="grid-template-columns: repeat(1, 1fr);">                        <a href="/img/8hPWYkXTnx-1425.jpeg" data-pswp-width="1425" data-pswp-height="387" target="_blank" style="text-decoration: none">          <img src="/img/8hPWYkXTnx-800.jpeg" alt="Terminal output of the running routes.">        </a>                </div>            <script type="module" elventy:ignore="" eleventy:ignore="">                import PhotoSwipeLightbox from '/js/photoswipe/photoswipe-lightbox.esm.min.js';                import PhotoSwipe from '/js/photoswipe/photoswipe.esm.min.js';                const lightbox = new PhotoSwipeLightbox({                    gallery: '#gallery-terminalOutput',                    children: 'a',                    pswpModule: PhotoSwipe,                    preload: [1, 1]                });                lightbox.init();            </script>            <small>Click to open</small>        </div><p></p>
+</li>
+</ul>
+<p><strong>Cool!</strong> And all it took was 14 questions and 283.2k tokens and about 2-3h of my time. But most of that time was spent reading up on camel-kit, digging into the skill files and helicoptering Claude.</p>
+<h3>Would I use it in production?</h3>
+<p>I don't know. I think it depends on the environment and the team, but I would definitely give it a trial given the opportunity since my demo only scratched the surface. I do have some questions though:</p>
+<p>How are we going to handle small changes? Are we going to use the skills to regenerate part of the spec and code? Or <em>guide</em> the changes manually with some precision?
+I tried implementing a small change with the skills (renaming a variable in the application.properties) and it used around the same amount of tokens just for that (chore/update-tms-to-broker-payload branch). So I think there are some lessons to be learned on when to use it.</p>
+<p>Can someone other than me read and understand the specs, routes and decisions? Will we experience drift if something gets re-derived from the <code>design-spec.md</code>?</p>
+<p>If I were an organisation looking to migrate from BizTalk or Mule I'd definitely add it to my list of options to research.</p>
+<h3>The future</h3>
+<p>All in all I think this is a great project. The interview style appealed to me because it came up with questions like: what clears a shipment's new state? Immediately challenging the design I pasted in and landing on a hole I left out. And I think it shows where our industry is heading. Does this mean that any non-technical user can develop integrations now? I don't think so. camel-kit holds your hand and asks you all the questions, but you still need to provide the answers. You also need to provide the environment where the integrations run. And that is a whole other story.</p>
+<p>It might even be a story that we can investigate with the help of some agents…</p>
+<p>What do you think of this kind of content? I'd love to <a href="https://data-integration.dev/contact/">hear your thoughts</a>! And if your team could use a hand with an integration project, I'm available for freelance work.</p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container">
+        <small>© Adam Tetz 2026 </small>
+      </div>
+    </footer>
+  </body>
+</html>
