@@ -1,6 +1,7 @@
 ---
 title: Building Camel integrations with AI agents and camel-kit!
 date: 2026-10-15
+linkedin: https://www.linkedin.com/pulse/building-camel-integrations-ai-agents-camel-kit-adam-tetz-kqpae/
 ---
 A tool that caught my eye recently is [camel-kit](https://github.com/luigidemasi/camel-kit) by [Luigi De Masi](https://github.com/luigidemasi), an Apache Camel committer. It promises to guide users along the full lifecycle of building [Apache Camel](https://camel.apache.org/) integrations: from designing the integration, through implementation and testing, to runtime verification. 
 

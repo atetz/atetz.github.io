@@ -1,8 +1,8 @@
 # Workflow
 
 The checks in SKILL.md have passed and `extract.mjs` has written `.linkedin/<post-name>/article.html` and
-`images.tsv` (columns: `n`, `kind`, `alt`, `file`). Commands run from the repo root; `S` is
-`.claude/skills/linkedin-article/scripts`.
+`images.tsv` (columns: `n`, `kind`, `alt`, `file`). Commands run from the repo root, with the script paths spelled
+out (see "Clipboard scripts and the sandbox" in SKILL.md).
 
 ## 1. Prepare
 
@@ -18,7 +18,7 @@ Skip this wave when the front matter has `linkedin_draft:`; open that address in
 
 1. Open `https://www.linkedin.com/article/new/` in a new tab. A login page: stop and ask Adam to sign in.
 2. Click the title field and type the front matter `title` exactly.
-3. Click the empty body, run `$S/clip-html.sh .linkedin/<post-name>/article.html`, press Cmd+V.
+3. Click the empty body, run `.claude/skills/linkedin-article/scripts/clip-html.sh .linkedin/<post-name>/article.html`, press Cmd+V.
 4. Wait for "Draft - saved". The address is now `https://www.linkedin.com/article/edit/<id>/`.
 5. Add `linkedin_draft: <that address>` to the post's front matter, below `date:`. Change nothing else in the file.
 6. **Verify the text.** Read the editor (read-only script, see linkedin.md) and compare with the script's summary:
@@ -32,7 +32,7 @@ Loop over the placeholders still in the draft, lowest number first. For each:
 
 1. Look up row `n` in `images.tsv`.
 2. Find the placeholder's text in the editor and triple-click it so the whole line is selected.
-3. Run `$S/clip-image.sh <file>`, press Cmd+V, wait until the image shows and the draft says "Draft - saved".
+3. Run `.claude/skills/linkedin-article/scripts/clip-image.sh <file>`, press Cmd+V, wait until the image shows and the draft says "Draft - saved".
 4. Read the editor: placeholder `n` is gone and there is one more image than before. If not, try once more;
    after the second failure leave the placeholder, note it, and go on to the next.
 

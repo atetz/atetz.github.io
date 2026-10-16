@@ -89,6 +89,32 @@ for (const e of all((e) => ["img", "table"].includes(e.name) || (e.name === "pre
   }
 }
 
+// A gallery's placeholders become plain paragraphs. LinkedIn drops a <div> pasted inside a list item, so a gallery
+// that sits in a list goes after the outermost list, in order.
+const afterList = new Map();
+for (const g of all((e) => cls(e).includes("eleventy-plugin-gallery"))) {
+  const outer = g.parent?.name === "div" ? g.parent : g;
+  const lines = du.findAll((e) => e.name === "p" && /^\[\[IMAGE \d+/.test(squash(du.textContent(e))), g.children);
+  let list = null;
+  for (let p = outer.parent; p && p !== section; p = p.parent) if (["ul", "ol"].includes(p.name)) list = p;
+  // The gallery markup leaves an empty <p> on each side (its stylesheet before it, a stray </p> after it).
+  for (const side of [du.prevElementSibling(outer), du.nextElementSibling(outer)]) {
+    if (side?.name === "p" && !squash(du.textContent(side))) du.removeElement(side);
+  }
+  const holder = outer.parent;
+  let anchor = list ? afterList.get(list) || list : outer;
+  for (const line of lines) {
+    du.append(anchor, line);
+    anchor = line;
+  }
+  if (list) {
+    afterList.set(list, anchor);
+    note("Galleries inside a list placed after the list");
+  }
+  du.removeElement(outer);
+  if (holder?.name === "p" && !squash(du.textContent(holder))) du.removeElement(holder);
+}
+
 for (const e of all((e) => e.name === "details")) {
   for (const s of du.findAll((c) => c.name === "summary", e.children)) s.name = "p";
   e.name = "div";

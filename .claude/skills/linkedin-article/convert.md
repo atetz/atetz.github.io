@@ -8,6 +8,7 @@ this table changes, the script changes with it. None of these rows changes Adam'
 | Paragraphs, headings, lists, quotes, links, emphasis | Kept as they are | | Heading levels flatten to one style |
 | Image (`{% image %}`, `<img>`, `![]()`) | `[[IMAGE n: alt]]`, kind `file` | Original file from `_src/assets` | |
 | Gallery (`{% gallery %}` with `{% galleryImg %}`) | One placeholder per image, in order | One image each, full size | Galleries become single images |
+| Gallery inside a list item | Its placeholders placed after the outermost list (LinkedIn drops a `<div>` pasted in a list item) | As a gallery | Galleries inside a list placed after the list |
 | Mermaid diagram (`<pre class="mermaid">`) | `[[IMAGE n: diagram k]]`, kind `mermaid` | Screenshot `.linkedin/<post-name>/diagram-k.png` | Diagrams shown as images |
 | Table | `[[IMAGE n: table k]]`, kind `table` | Screenshot `.linkedin/<post-name>/table-k.png` | Tables shown as images |
 | Code block | Text kept, highlighting markup removed | | Code loses syntax highlighting |

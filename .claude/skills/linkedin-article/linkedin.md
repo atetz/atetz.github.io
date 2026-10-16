@@ -31,6 +31,8 @@ draft that was never published.
 - Cmd+Down does not move the cursor to the end of the article.
 - LinkedIn turns both `h2` and `h3` into the same heading style, drops the code language, and flattens a pasted
   table into one line of text.
+- A `<div>` inside a list item is dropped on paste, with everything in it and without an error (2026-10-15: a
+  gallery inside a bullet lost its placeholders). `extract.mjs` now moves such galleries after the list.
 - If HTML with image addresses is pasted, only the first 20 images arrive and the rest vanish without an error.
   Not relevant to the two-wave method, which pastes no image addresses.
 
@@ -59,7 +61,9 @@ nothing. Until a method is found, leave the cover empty and report it: Adam sets
 - With the box open, leaving the page raises the browser's "Leave site?" prompt. Don't force it.
 - The text box is a different editor from the article body (class `ql-editor`, label "Text editor for creating
   content"). Cmd+V does nothing in it. Typing works: click the placeholder text, type each paragraph, and press
-  Return twice between paragraphs. Read it back with `innerText` (2026-10-13).
+  Return twice between paragraphs. Read it back with `innerText` (2026-10-13). Each blank line reads back as
+  five `\n` in `innerText` but shows as one blank line (2026-10-16).
+- Typing a hashtag opens a suggestion list; Escape closes it and leaves the publish box open (2026-10-16).
 - The card under the text shows the cover image, or the article's first image when there is no cover.
 - After Publish the tab moves to `https://www.linkedin.com/pulse/<slug>/?published=t` and shows "Congrats on
   publishing your latest article, Adam!". The published address is that one without `?published=t` (2026-10-13).

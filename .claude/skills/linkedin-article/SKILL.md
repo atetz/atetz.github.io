@@ -35,8 +35,19 @@ Read files only when the step needs them.
 Run from the repo root:
 
 ```
-node .claude/skills/linkedin-article/scripts/extract.mjs <post-name>
+NODE_USE_ENV_PROXY=1 node .claude/skills/linkedin-article/scripts/extract.mjs <post-name>
 ```
+
+In Claude Code's sandbox, Node's `fetch` ignores the proxy and fails with `ENOTFOUND data-integration.dev` without
+`NODE_USE_ENV_PROXY=1`. In auto mode, also list `data-integration.dev` as an allowed domain for the command.
+
+## Clipboard scripts and the sandbox
+
+The sandbox blocks `osascript` and `mktemp`, so `scripts/clip-html.sh` and `scripts/clip-image.sh` run outside it
+through the exclusion `.claude/skills/linkedin-article/scripts/clip-*` in `.claude/settings.local.json`. If it's
+missing, ask Adam to run `/sandbox exclude ".claude/skills/linkedin-article/scripts/clip-*"`. The exclusion only
+matches when the command starts with that path, so run each script as its own command from the repo root, spelled
+out: no `cd … &&` before it, no `$S` variable, nothing chained after it.
 
 Stop and report when the output says:
 
