@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviewable data mappings built by AI</title>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="description" content="">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="">
+    <link href="/css/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="/bundle.css">
+    <script src="https://kit.fontawesome.com/7991abe048.js" crossorigin="anonymous"></script>
+    </head><body>
+      <script type="module">
+        import mermaid from "/js/mermaid/mermaid.esm.mjs";
+        mermaid.initialize({ startOnLoad: true });
+      </script>
+    </body>
+  
+  <body>
+    <header>
+      <div class="container flex-header">
+        <a href="/" target="_self">
+          <img src="/assets/images/logo.svg" alt="data-integration.dev Logo" id="logo"></a>
+        <nav>
+          <ul><li><a href="/">Home</a></li>
+<li><a href="/projects/">Projects</a></li>
+<li><a href="/approach/">Approach</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/contact/">Contact</a></li></ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+<div class="container grid-container">
+  <aside id="sidebar" class="flex-container">
+    <div id="sidebar-picture">
+      <picture><source type="image/avif" srcset="/img/7Y2k0iyO4o-512.avif 512w"><source type="image/webp" srcset="/img/7Y2k0iyO4o-512.webp 512w"><source type="image/png" srcset="/img/7Y2k0iyO4o-512.png 512w"><img loading="lazy" decoding="async" src="/img/7Y2k0iyO4o-512.jpeg" alt="profile picture" class="roundedPhoto" width="512" height="512"></picture>
+    </div>
+    <div id="sidebar-content">
+      <section>
+        <small><i>Integration consultant living in Burgundy, France.</i></small>
+      </section>
+
+      <section>
+        <i class="fa-brands fa-linkedin"></i>
+        <small><a href="https://www.linkedin.com/in/adam-tetz/" target="_blank">in/adam-tetz</a>
+        </small>
+        <br>
+        <i class="fa-brands fa-github"></i>
+        <small><a href="https://github.com/atetz" target="_blank">atetz</a>
+        </small>
+      </section>
+    </div>
+  </aside>
+  <div id="main">
+    <section>
+      
+<hgroup>
+    <h2>
+      Reviewable data mappings built by AI
+    </h2>
+    <p>November 6, 2026</p>
+</hgroup>
+  <p>Up until two years ago I would spend a great deal of time developing data mappings. Most of it was fairly repetitive work with the occasional challenge. Since the dawn of the LLMs I've noticed a decline in demand for this type of work. Some customers are happy asking an LLM to write a script to solve their issue quickly without the costs of an external consultant. While it initially sucks that customers sometimes think they don't need me anymore, I've spent a great deal of my career automating work, so it was inevitable that it would include some of my own one day. And in my <a href="/posts/camel-kit-sandbox/index.html" target="_self">last post</a> about building integrations with agents I showed that a working data mapping is easily generated, provided that you have the right inputs.</p>
+<p>Recently a customer reached out to me saying that they have experimented with AI for data mapping and they find it does pretty well. An LLM can very quickly produce a working transformation based on a couple of schemas and sample files. The problem was that everyone did it slightly differently. Some used AI from the terminal in a repo with loads of markdown files and others copy-pasted from a chat window. And existing mappings were already a mix of XSLT 2.0, scripts and templating engines.</p>
+<p>While the results worked, it was not exactly clear <em>why</em> a mapping did what it did or which business rules it captured. Nor was it clear how changes were implemented.</p>
+<p>The question was: How can we get the team to work the same way, transparently, and ensure that the outcomes have a certain quality?</p>
+<h3>The workflow</h3>
+<p>We decided to run a pilot with a new way of working. This is of course subject to change but I thought it might be worth sharing. Here's our AI data mapping workflow:</p>
+<p><picture><source type="image/avif" srcset="/img/OBPd0esBSG-690.avif 690w"><source type="image/webp" srcset="/img/OBPd0esBSG-690.webp 690w"><img loading="lazy" decoding="async" src="/img/OBPd0esBSG-690.png" alt="AI data mapping workflow: init, add samples, draft spec, review, generate XSLT, green or needs a human" class="centerImage" width="690" height="542"></picture></p>
+<p>From a bird's-eye view we took some ideas from <a href="https://github.com/github/spec-kit#spec-driven-development">spec-driven development</a> workflows. In this case the workflows are guided by Claude Code and a certain set of <a href="https://code.claude.com/docs/en/skills">skills</a> to ensure each step has the same instructions &amp; <a href="https://code.claude.com/docs/en/hooks-guide">hooks</a> for running scripts and preventing certain actions.</p>
+<ol>
+<li>
+<p>The first step for a new mapping is kicking off the skill <code>/init-mapping</code>. An agent will then ask some specific questions about the domain and scaffold the project's files and folders. This includes directories for the sample files, tests, schemas and output and a skeleton of the spec. All in a structure that makes sense for the customer.</p>
+</li>
+<li>
+<p>Next a team member adds the schemas and samples with expected inputs and outputs.</p>
+</li>
+<li>
+<p>Each mapping needs a spec which is regarded as the source of truth and is later used to generate the XSLT. <code>/draft-spec</code> generates a draft version. The goal is to create a reasonable starting point that must be reviewed by a team member. The agent looks at the sample files and drafts every target field as proposed. Every proposed field says what it's derived from. If the samples don't explain a value, the agent asks questions and if the answers are still unclear then it will leave actions behind in the spec to resolve during the review step. Here's a trimmed example of a spec:</p>
+<pre class="language-markdown"><code class="language-markdown"><span class="token front-matter-block"><span class="token punctuation">---</span>
+<span class="token front-matter yaml language-yaml">source_format: json
+source_schema: schemas/webshop-order.json
+target_format: xml
+target_schema: schemas/sales-order.xsd</span>
+<span class="token punctuation">---</span></span>
+<span class="token title important"><span class="token punctuation">#</span> Webshop order to sales order</span>
+
+<span class="token title important"><span class="token punctuation">##</span> General rules</span>
+<span class="token list punctuation">-</span> JSON fields are dot paths with [] after each array, for example order.lines[].quantity.
+<span class="token list punctuation">-</span> Calculated amounts are rounded to 2 decimals, half up. Copied values are never rounded.
+
+<span class="token title important"><span class="token punctuation">##</span> Value maps</span>
+<span class="token table"><span class="token table-header-row"><span class="token punctuation">|</span><span class="token table-header important"> order.payment_method </span><span class="token punctuation">|</span><span class="token table-header important"> paymentTerms </span><span class="token punctuation">|</span>
+</span><span class="token table-line"><span class="token punctuation">|</span> <span class="token punctuation">--------------</span> <span class="token punctuation">|</span> <span class="token punctuation">------------</span> <span class="token punctuation">|</span>
+</span><span class="token table-data-rows"><span class="token punctuation">|</span><span class="token table-data"> CARD           </span><span class="token punctuation">|</span><span class="token table-data"> PREPAID      </span><span class="token punctuation">|</span>
+<span class="token punctuation">|</span><span class="token table-data"> INVOICE        </span><span class="token punctuation">|</span><span class="token table-data"> NET30        </span><span class="token punctuation">|</span>
+</span></span>
+<span class="token title important"><span class="token punctuation">##</span> Fields</span>
+<span class="token title important"><span class="token punctuation">###</span> /salesOrder/customerReference</span>
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Status:</span><span class="token punctuation">**</span></span> agreed
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Source:</span><span class="token punctuation">**</span></span> <span class="token code-snippet code keyword">`order.id`</span>
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Rule:</span><span class="token punctuation">**</span></span> Copy the webshop order id.
+
+<span class="token title important"><span class="token punctuation">###</span> /salesOrder/discountPercentage</span>
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Status:</span><span class="token punctuation">**</span></span> proposed
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Source:</span><span class="token punctuation">**</span></span> <span class="token code-snippet code keyword">`order.coupon_code`</span>
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Rule:</span><span class="token punctuation">**</span></span> 10 when the coupon starts with <span class="token code-snippet code keyword">`VIP`</span>, otherwise 0.
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Evidence:</span><span class="token punctuation">**</span></span> matches samples 1 and 3.
+<span class="token list punctuation">-</span> <span class="token bold"><span class="token punctuation">**</span><span class="token content">Question:</span><span class="token punctuation">**</span></span> sample 2 has coupon <span class="token code-snippet code keyword">`SUMMER24`</span> with a 15% discount. Is there a coupon table?</code></pre>
+</li>
+<li>
+<p>This is the moment where the AI's understanding of the mapping is reviewed and steered. A team member reviews the draft, clears up any misunderstandings, adds extra context and makes a definitive version ready in a pull request. This ensures that changes show up as readable diffs and that it's easy for the team to review what the incoming changes are.</p>
+</li>
+<li>
+<p>Once the spec is approved it's handed off to <code>/generate-xslt</code>. This kicks off a test &amp; development loop that eventually produces the right XSLT or ends with <em>needs a human</em>. This skill has multiple phases:</p>
+<ol>
+<li>The spec gets checked for blockers. Generation refuses to start if any field is still proposed or any question is open.</li>
+<li>The agent writes tests in <a href="https://github.com/xspec/xspec">XSpec</a> which is a testing framework for XSLT. Each sample file pair gets a test and so does each rule that's more than a 1-on-1 mapping. Value-maps or decision-table rows also get a separate test. The idea behind this is that it's simpler to verify a test file that has mostly rules for the exceptions instead of tests for each field. And we trust that the sample files cover the simple 1-on-1 mappings.</li>
+<li>Write &amp; test the stylesheet. The agent takes the tests, spec and our conventions and produces an XSLT file. It then runs the test suite and corrects any errors automatically. This part has hooks set up for running the test suite and file protections so that the agent can't cut corners and edit the tests itself to make them green.</li>
+<li>If within a certain number of loops the agent is unable to produce green tests, it will end with <em>needs a human</em>, write a report with its reasoning and go back to the review step.</li>
+</ol>
+</li>
+</ol>
+<h3>The principles behind it</h3>
+<ol>
+<li>One format: XSLT 3.0 for both JSON and XML. It's proven itself in the Azure Logic Apps and Apache Camel worlds, and the team only has to know one thing.</li>
+<li>The spec is the source of truth. Nobody edits the XSLT by hand. To change a mapping you change the spec, so there's one thing to keep up to date and every change is a readable diff.</li>
+<li>Only a human can approve a rule. The agent drafts every rule from evidence like <em>matches in samples 1 and 3</em> and asks when the samples don't explain a value. A person sets each rule to agreed. The agent never signs off on its own work.</li>
+<li>Tests come first. They're written from the spec and samples without looking at the stylesheet. A test copied from the code proves nothing.</li>
+<li>The agent can't move the goalposts. The spec, samples, expected outputs and schemas are read-only, and the tests lock once the write-and-test loop starts. So a test can't be made to pass by changing what it checks.</li>
+<li>The agent fixes its own mistakes and not the business's. A wrong path or namespace gets retried. If the spec and an expected output disagree then it stops and asks.</li>
+<li>Tests run like production. They use the same XSLT engine and Java version as the integration platform and are triggered by one command for people, the agent and future CI.</li>
+</ol>
+<p>So what about updates? These are also handled by <code>/generate-xslt</code>, which checks if it's a new mapping or an existing one. If it's an existing one it performs a diff and only patches the new tests and relevant parts of the XSLT.</p>
+<p>And that's it! Using this workflow we've been able to re-create some mappings with business rules in them that work. There are some things that I'd still like to add, like a proper CI pipeline and maybe generating a visual overview of a mapping using the format of a data mapper like Kaoto.</p>
+<p>I'm curious, have you looked at AI for creating data mappings? What were your experiences? I'd love to <a href="https://data-integration.dev/contact/">hear your thoughts</a>! And if your team could use a hand setting up a workflow like this, I'm available for freelance work within the EU. This is the kind of work I enjoy doing.</p>
+<p><small>This article was written with the assistance of AI. </small></p>
+
+    </section>
+  </div>
+</div>
+</main>
+
+    <footer id="siteFooter">
+      <div class="container">
+        <small>© Adam Tetz 2026 </small>
+      </div>
+    </footer>
+  </body>
+</html>
