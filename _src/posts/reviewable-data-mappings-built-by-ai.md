@@ -66,7 +66,7 @@ From a bird's-eye view we took some ideas from [spec-driven development](https:/
 	4. If within a certain number of loops the agent is unable to produce green tests, it will end with _needs a human_, write a report with its reasoning and go back to the review step.
 
 ### The principles behind it
-1. One format: XSLT 3.0 for both JSON and XML. It's proven itself in the Azure Logic Apps and Apache Camel worlds, and the team only has to know one thing. 
+1. XSLT 3.0 as the single mapping format for both JSON and XML. It's proven itself in the Azure Logic Apps and Apache Camel worlds and the team only has to know one format. 
 2. The spec is the source of truth. Nobody edits the XSLT by hand. To change a mapping you change the spec, so there's one thing to keep up to date and every change is a readable diff.
 3. Only a human can approve a rule. The agent drafts every rule from evidence like _matches in samples 1 and 3_ and asks when the samples don't explain a value. A person sets each rule to agreed. The agent never signs off on its own work.
 4. Tests come first. They're written from the spec and samples without looking at the stylesheet. A test copied from the code proves nothing.
@@ -76,7 +76,7 @@ From a bird's-eye view we took some ideas from [spec-driven development](https:/
 
 So what about updates? These are also handled by `/generate-xslt`, which checks if it's a new mapping or an existing one. If it's an existing one it performs a diff and only patches the new tests and relevant parts of the XSLT. 
 
-And that's it! Using this workflow we've been able to re-create some mappings with business rules in them that work. There are some things that I'd still like to add, like a proper CI pipeline and maybe generating a visual overview of a mapping using the format of a data mapper like Kaoto.  
+And that's it! Using this workflow we've been able to re-create some mappings with business rules in them that work. There are some things that I'd still like to add, like schema validation, a CI pipeline and maybe generating a visual overview of a mapping using the format of a data mapper like Kaoto.
 
 I'm curious, have you looked at AI for creating data mappings? What were your experiences? I'd love to [hear your thoughts](https://data-integration.dev/contact/)! And if your team could use a hand setting up a workflow like this, I'm available for freelance work within the EU. This is the kind of work I enjoy doing.
 
