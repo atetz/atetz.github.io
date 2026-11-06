@@ -129,7 +129,7 @@ target_schema: schemas/sales-order.xsd</span>
 </ol>
 <h3>The principles behind it</h3>
 <ol>
-<li>One format: XSLT 3.0 for both JSON and XML. It's proven itself in the Azure Logic Apps and Apache Camel worlds, and the team only has to know one thing.</li>
+<li>XSLT 3.0 as the single mapping format for both JSON and XML. It's proven itself in the Azure Logic Apps and Apache Camel worlds and the team only has to know one format.</li>
 <li>The spec is the source of truth. Nobody edits the XSLT by hand. To change a mapping you change the spec, so there's one thing to keep up to date and every change is a readable diff.</li>
 <li>Only a human can approve a rule. The agent drafts every rule from evidence like <em>matches in samples 1 and 3</em> and asks when the samples don't explain a value. A person sets each rule to agreed. The agent never signs off on its own work.</li>
 <li>Tests come first. They're written from the spec and samples without looking at the stylesheet. A test copied from the code proves nothing.</li>
@@ -138,7 +138,7 @@ target_schema: schemas/sales-order.xsd</span>
 <li>Tests run like production. They use the same XSLT engine and Java version as the integration platform and are triggered by one command for people, the agent and future CI.</li>
 </ol>
 <p>So what about updates? These are also handled by <code>/generate-xslt</code>, which checks if it's a new mapping or an existing one. If it's an existing one it performs a diff and only patches the new tests and relevant parts of the XSLT.</p>
-<p>And that's it! Using this workflow we've been able to re-create some mappings with business rules in them that work. There are some things that I'd still like to add, like a proper CI pipeline and maybe generating a visual overview of a mapping using the format of a data mapper like Kaoto.</p>
+<p>And that's it! Using this workflow we've been able to re-create some mappings with business rules in them that work. There are some things that I'd still like to add, like schema validation, a CI pipeline and maybe generating a visual overview of a mapping using the format of a data mapper like Kaoto.</p>
 <p>I'm curious, have you looked at AI for creating data mappings? What were your experiences? I'd love to <a href="https://data-integration.dev/contact/">hear your thoughts</a>! And if your team could use a hand setting up a workflow like this, I'm available for freelance work within the EU. This is the kind of work I enjoy doing.</p>
 <p><small>This article was written with the assistance of AI. </small></p>
 
